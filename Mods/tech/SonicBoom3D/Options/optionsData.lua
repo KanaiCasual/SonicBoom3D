@@ -1,0 +1,22 @@
+-- The words on SonicBoom3D's Special page ($NAME in options.dlg).
+cdata = {
+	SB_TITLE           = _("SonicBoom3D: the vapor cone"),
+	SB_ENABLED         = _("Vapor cone"),
+	SB_QUALITY         = _("Quality"),
+	SB_QUALITY_HELP    = _("Low costs about 30% less GPU time than High; Ultra about 35% more."),
+	SB_DENSITY         = _("Thickness (%)"),
+	SB_WIDTH           = _("Width (%)"),
+	SB_WIDTH_HELP      = _("100% reaches out as far as in photos. Its start and end stay put."),
+	SB_PULSE           = _("Flashing and breathing (%)"),
+	SB_PULSE_HELP      = _("How much it flashes forming and breaking up, and breathes. 0% is steady."),
+	SB_LOOK            = _("Light and shade"),
+	SB_JET_SHADE       = _("The jet shades its vapor from the sun"),
+	SB_SHADOW          = _("Its shadow on the ground, the sea and the jet"),
+	SB_REFLECTION      = _("Its reflection in water, as DCS reflects jets"),
+	SB_WHERE           = _("Where it shows"),
+	SB_COCKPIT         = _("From the cockpit"),
+	SB_MIRRORS         = _("In the cockpit mirrors"),
+	SB_OTHER_JETS      = _("Other jets"),
+	SB_TEST_MODE       = _("Test mode: at any speed and height, to check it lines up"),
+	SB_NOTE            = _("Changes apply straight away, in flight too."),
+}
