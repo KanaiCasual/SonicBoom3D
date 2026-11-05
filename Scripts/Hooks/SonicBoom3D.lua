@@ -26,6 +26,7 @@ local CFG = {
 	SHADOW = true,         -- page: its shadow on the ground, the sea and the jet
 	REFLECTION = true,     -- page: its reflection in water, as DCS reflects jets
 	PULSE = 1,             -- page: how much it flashes forming and breaking up, and breathes when solid: 0 = steady, 1 = like real footage
+	SOFT = false,          -- page: a softer cone, a smooth mist with soft edges (as the JF-17 draws its own), not crisp faces
 	SHOW_IN_COCKPIT = true, -- page
 	COCKPIT_RADIUS = 8,    -- camera this close to your jet (m) counts as the cockpit view
 	SHOW_IN_MIRRORS = true, -- page
@@ -45,7 +46,7 @@ local OPTIONS = {
 	{ "density", "DENSITY", function(v) return 2 * v / 100 end },   -- 100% = 2
 	{ "width", "CONE_WIDTH", function(v) return v / 100 end },
 	{ "pulse", "PULSE", function(v) return v / 100 end },
-	{ "jetShade", "JET_SHADE" }, { "shadow", "SHADOW" }, { "reflection", "REFLECTION" },
+	{ "soft", "SOFT" }, { "jetShade", "JET_SHADE" }, { "shadow", "SHADOW" }, { "reflection", "REFLECTION" },
 	{ "cockpit", "SHOW_IN_COCKPIT" }, { "mirrors", "SHOW_IN_MIRRORS" }, { "otherJets", "OTHER_JETS" },
 	{ "testMode", "TEST_MODE" },
 }
@@ -67,10 +68,7 @@ end
 
 -- Jets whose module draws its own vapor cone, when a person flies them: no second one on top. An AI one
 -- (its module isn't running) gets this cone. Delete a line to get this cone on it always.
-local OWN_VAPOR = {
-	["JF-17"] = true, ["F-14A-135-GR"] = true, ["F-14A-135-GR-Early"] = true, ["F-14A-95-GR"] = true,
-	["F-14B"] = true, ["F-14BU"] = true, ["M-2000C"] = true,
-}
+local OWN_VAPOR = { ["JF-17"] = true, ["M-2000C"] = true }
 
 -- Each jet's shape: the pilot's seat, the wingtip, where the wing ends (te: its trailing edge where it meets
 -- the fuselage, or out at the tips when they're swept back), where the wing begins (le: its leading edge
@@ -392,7 +390,7 @@ local function otherJet(id, j, o, t)
 	local ux, uy, uz = jetUp(h[8], h[9], h[10] * bankSign)
 	local load = (j.a[1] * ux + j.a[2] * uy + j.a[3] * uz) / 9.81 + uy   -- along its up, gravity included
 	local size, front, shock0, shock1, outer, halfSpan, te, le = placement(geometryOf(o.Name or ""), false)
-	return { strength(mach, load), h[1], h[2], h[3], h[4], h[5], h[6], t + id % 97 * 7.3,   -- each breathing on its own
+	return { strength(mach, load), h[1], h[2], h[3], h[4], h[5], h[6], h[7] + id % 97 * 7.3,   -- each breathing on its own, timed from its pose
 		size, 1, front, shock0, shock1, outer, halfSpan, ux, uy, uz, load, thickness(p.y), id,
 		j.v[1], j.v[2], j.v[3], h[7],   -- its velocity, and when it was where it is, for the DLL to move it on to the picture's time
 		CFG.CONE_WIDTH, te, le }
@@ -454,11 +452,12 @@ local function sendFrame()
 	local mirror = CFG.SHOW_IN_MIRRORS and CFG.MIRROR_BRIGHTNESS or 0
 	local v = { s, h[1], h[2], h[3], h[4], h[5], h[6],
 		c.x, c.y, c.z, cam.x.x, cam.x.y, cam.x.z, cam.y.x, cam.y.y, cam.y.z, cam.z.x, cam.z.y, cam.z.z,
-		t, fov, size, mainView and 1 or 0, mirror, front, shock0, shock1, sunN, sunU, sunE, outer, halfSpan,
+		me and seenAt or t, fov, size, mainView and 1 or 0, mirror, front, shock0, shock1, sunN, sunU, sunE, outer, halfSpan,   -- the vapor's clock: its pose's
 		ux, uy, uz, load, density, math.max(CFG.PULSE, 0.001), CFG.DCS_LIGHT and 1 or -1, CFG.SCATTER_TEST and 1 or 0, width, 0, CFG.JET_SHADE and 1 or -1,   -- 0: your jet's id
 		CFG.QUALITY, CFG.SHADOW and 1 or -1, CFG.REFLECTION and 1 or -1,
 		vel.x or 0, vel.y or 0, vel.z or 0, seenAt,   -- for the DLL to move your jet on to the picture's time
-		te, le }
+		te, le, CFG.SOFT and 1 or 0,
+		t }   -- the newest simulation step seen: the step the picture shows is one of these
 	for _, jet in ipairs(jets) do
 		for _, x in ipairs(jet) do v[#v + 1] = x end
 	end

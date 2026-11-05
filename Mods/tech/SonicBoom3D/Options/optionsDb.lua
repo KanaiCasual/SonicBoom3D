@@ -13,6 +13,7 @@ return {
 	density    = DbOption.new():setValue(100):slider(DbOption.Range(25, 200)),   -- percent
 	width      = DbOption.new():setValue(100):slider(DbOption.Range(70, 150)),
 	pulse      = DbOption.new():setValue(100):slider(DbOption.Range(0, 100)),
+	soft       = DbOption.new():setValue(false):checkbox(),
 	jetShade   = DbOption.new():setValue(true):checkbox(),
 	shadow     = DbOption.new():setValue(true):checkbox(),
 	reflection = DbOption.new():setValue(true):checkbox(),
