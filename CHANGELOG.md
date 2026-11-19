@@ -1,8 +1,6 @@
 # Changelog
 
-## 1.2 (in development)
-
-Not released yet. This list grows until it is.
+## 1.2
 
 ### New
 

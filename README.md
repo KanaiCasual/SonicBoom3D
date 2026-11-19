@@ -1,6 +1,6 @@
 # SonicBoom3D: Transonic Vapor Cones for DCS World
 
-![SonicBoom3D: an F-14B pushing through Mach 1 into the sun](images/title-f14b-into-the-sun.jpg)
+![SonicBoom3D: an F/A-18C pulling 9 G through Mach 1, the vapor gathered over its wing](images/title-fa18c-pulling-9g.jpg)
 
 Real 3D vapor cones for every supersonic-capable jet in DCS World: yours, the AI's and other players'.
 
@@ -12,7 +12,7 @@ Push into the transonic band and a condensation cone forms around the jet. It's 
 - Flat screen and VR, with MSAA, DLAA or DLSS, IC-safe
 - Multiplayer: client-side, nothing on the server
 
-**Latest release: 1.1** ([Releases](../../releases), and [ED User Files](https://files.digitalcombatsimulator.com/en/files/3352000/)). **1.2 is in development**, and this page describes it: see the [changelog](CHANGELOG.md).
+**Latest release: 1.2** ([Releases](../../releases), and [ED User Files](https://files.digitalcombatsimulator.com/en/files/3352000/)). What changed: see the [changelog](CHANGELOG.md).
 
 Updates, bug reports and feedback: [Discord](https://discord.gg/hAy2gTF7R2)
 
@@ -33,14 +33,20 @@ Updates, bug reports and feedback: [Discord](https://discord.gg/hAy2gTF7R2)
 
 ## Pictures
 
-In-game, unedited, scaled to 1920×1080.
+In-game, unedited, scaled to 1920×1080 (the options page cropped to its window).
 
 | | |
 |---|---|
+| ![F-16C pulling 8 G](images/1.2/f16c-pulling-8g.jpg) | ![F-16C pulling 8 G, from behind](images/1.2/f16c-pulling-8g-from-behind.jpg) |
+| F-16C pulling 8 G (AI): the vapor over the wing | F-16C pulling 8 G, from behind |
+| ![F-16C, its cone reshaped](images/1.2/f16c-cone-reshaped.jpg) | ![The Special options page](images/1.2/options-special-page.jpg) |
+| F-16C, its cone reshaped: taller, flatter below, longer | Options > Special > SonicBoom3D |
+| ![F-15E, the softer cone](images/1.2/f15e-softer-cone.jpg) | ![F-15E, half soft](images/1.2/f15e-half-soft.jpg) |
+| F-15E, the softer cone | F-15E, halfway from crisp to soft |
 | ![F-14B mirror](images/1.1/f14b-mirror.jpg) | ![F-14B side on](images/1.1/f14b-side-on.jpg) |
 | F-14B, in the mirror | F-14B, side on |
-| ![F-15E, the softer cone](images/1.1/f15e-softer-cone.jpg) | ![F-15E into the sun](images/1.1/f15e-into-the-sun.jpg) |
-| F-15E, the softer cone | F-15E, into the sun |
+| ![F-15E, 1.1's softer cone](images/1.1/f15e-softer-cone.jpg) | ![F-15E into the sun](images/1.1/f15e-into-the-sun.jpg) |
+| F-15E, the softer cone as it was in 1.1 (now cone-shaped) | F-15E, into the sun |
 | ![F-16C side on](images/1.1/f16c-side-on.jpg) | ![F/A-18C carrier sunset](images/1.1/fa18c-carrier-sunset.jpg) |
 | F-16C, side on | F/A-18C, carrier at sunset |
 | ![F/A-18C past the carrier](images/1.0/fa18c-past-the-carrier.jpg) | ![F/A-18C formation](images/1.0/fa18c-formation.jpg) |
