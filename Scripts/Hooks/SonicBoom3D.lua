@@ -445,6 +445,13 @@ function cb.onSimulationStart()
 end
 
 function cb.onSimulationFrame()
+	if UPDATE then   -- the update check's answer and popup: this runs in the main menu too
+		local ok, err = pcall(UPDATE.tick)
+		if not ok then
+			UPDATE = nil -- one log line, then it's left alone
+			say("update check: " .. tostring(err))
+		end
+	end
 	if not SB then return end
 	local ok, err = pcall(sendFrame)
 	if not ok and not errored then
@@ -473,7 +480,7 @@ if ok and type(mod) == "table" then
 	local started, err = pcall(function()   -- whatever happens to it, never the cone
 		if not CFG.UPDATE_CHECK then return end
 		UPDATE = dofile(lfs.writedir() .. "Mods\\tech\\SonicBoom3D\\update.lua")
-		UPDATE.start(SB, lfs.writedir(), say)
+		UPDATE.start(SB, lfs.writedir(), say, Sim.getRealTime)
 	end)
 	if not started then say("update check: " .. tostring(err)) end
 else

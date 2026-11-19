@@ -42,24 +42,28 @@ local function skip(writedir, version)
 	end
 end
 
--- Starts the check, and the popup in the main menu once there's an answer. SB: the DLL; say: a line into dcs.log.
-function M.start(SB, writedir, say)
+-- Starts the check. SB: the DLL; say: a line into dcs.log; clock: seconds (the hook's Sim.getRealTime).
+-- The hook then calls M.tick() each frame it's given (onSimulationFrame, main menu included), for the answer and the popup.
+function M.start(SB, writedir, say, clock)
 	local current = M.version(writedir)
-	if not (current and SB.updateCheck) then return end
-	local UpdateManager, MsgWindow = require("UpdateManager"), require("MsgWindow")
+	if not (current and SB.updateCheck) then
+		say("update check: no version in entry.lua")
+		return
+	end
+	local MsgWindow = require("MsgWindow")
 	SB.updateCheck(current, M.API)
-	local ready   -- when the answer was in and we were in the main menu
+	say("update check: asking GitHub (this is " .. current .. ")")
+	local ready   -- when we were in the main menu with something to show
 
 	local function inMenu()
 		if M.inMission then ready = nil return false end
-		ready = ready or os.time()
-		return os.time() - ready >= M.WAIT
+		ready = ready or clock()
+		return clock() - ready >= M.WAIT
 	end
 
 	local function installing()
-		if not inMenu() then return false end
 		local state, latest, page, _, why = SB.updateState()
-		if state == "downloading" then return false end
+		if state == "downloading" or not inMenu() then return false end
 		if state == "installed" then
 			say("update: " .. latest .. " installed")
 			MsgWindow.info(string.format("SonicBoom3D %s is installed.\n\nRestart DCS to use it.", latest), CAPTION, "OK"):show()
@@ -84,17 +88,19 @@ function M.start(SB, writedir, say)
 			if button == NOW then
 				ready = nil
 				SB.updateInstall(writedir)
-				UpdateManager.add(installing)
+				M.next = installing
 			elseif button == PAGE then
 				SB.open(page)
 			elseif button == SKIP then
 				skip(writedir, latest)
 			end
 		end
+		say("update check: popup shown")
 		h:show()
 	end
 
-	UpdateManager.add(function()
+	local answered
+	M.next = function()
 		local state, latest, page, _, why = SB.updateState()
 		if state == "checking" then return false end
 		if state ~= "available" then
@@ -105,11 +111,20 @@ function M.start(SB, writedir, say)
 			say("update check: " .. latest .. " is out, skipped")
 			return true
 		end
+		if not answered then
+			answered = true
+			say("update check: " .. latest .. " is out (this is " .. current .. "), shown in the main menu")
+		end
 		if not inMenu() then return false end
-		say("update check: " .. latest .. " is out (this is " .. current .. ")")
 		ask(latest, page)
 		return true
-	end)
+	end
+end
+
+-- What's waiting (the answer, the popup, an install), run once a frame; done when it says so.
+function M.tick()
+	local step = M.next
+	if step and step() and M.next == step then M.next = nil end
 end
 
 return M
