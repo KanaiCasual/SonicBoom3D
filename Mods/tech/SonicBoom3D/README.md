@@ -67,7 +67,7 @@ To check the cone lines up without going supersonic, tick **Test mode** on its S
 
 ## Updates
 
-As DCS starts, SonicBoom3D asks GitHub whether there's a newer version (its latest release, `KanaiCasual/SonicBoom3D`; nothing about you is sent). If there is, a window says so in the main menu, `1.2 → 1.3`, with the sound of a sonic boom, never over a mission:
+As DCS starts, SonicBoom3D asks GitHub whether there's a newer version (its latest release, `KanaiCasual/SonicBoom3D`; nothing about you is sent). If there is, a window says so in the main menu, `1.2 → 1.3`, with a short chime, never over a mission:
 
 - **Update now** downloads it and puts it in place of this one. Restart DCS to use it. Only the mod's own files are written: `Mods\tech\SonicBoom3D` and `Scripts\Hooks\SonicBoom3D.lua` (settings changed at the top of the hook go back to the release's; the Special page's are kept). If it can't, it says why and offers the download page.
 - **Open download page** opens its release page in your browser, to download the zip and install it yourself.
@@ -212,7 +212,7 @@ It costs nothing when you're not capturing. With **Advanced logging** on it also
 
 ## For developers
 
-- `src\SonicBoom3D.cpp` is the DLL, with `src\update.cpp`, its update check: GitHub's latest release fetched with WinHTTP on a thread of its own (the DLL kept loaded while it runs), its zip unpacked with Windows' `tar` into `%TEMP%` and only the mod's files copied over, the loaded DLL moved aside to `SonicBoom3D.dll.old` (removed at the next start); the popup and its buttons are `Mods\tech\SonicBoom3D\update.lua`, its sound `Sounds\update.wav` (`tools\make_update_sound.py`: a sonic boom's N-wave, two sharp steps a tenth of a second apart, and a rumble).
+- `src\SonicBoom3D.cpp` is the DLL, with `src\update.cpp`, its update check: GitHub's latest release fetched with WinHTTP on a thread of its own (the DLL kept loaded while it runs), its zip unpacked with Windows' `tar` into `%TEMP%` and only the mod's files copied over, the loaded DLL moved aside to `SonicBoom3D.dll.old` (removed at the next start); the popup and its buttons are `Mods\tech\SonicBoom3D\update.lua`, its sound `Sounds\update.wav` (`tools\make_update_sound.py`: a two-note chime, E5 then B5).
   - **Hooks:** it hooks `IDXGISwapChain::Present` and DCS's render-target changes. It saves and restores every piece of pipeline state it touches. Direct3D rewrites parts of the context's method table during the frame, so the hooks are put back on every target change.
   - **Cameras:** it reads DCS's cameras from the constant buffers DCS uploads. Each camera block holds the view, inverse view, projection and view-projection matrices. The one with the screen's aspect is the main view; one next to your head with a different aspect, or one looking back along the jet with its own near clip (the F-14's), is the mirror.
   - **Depth:** each ray stops at the 32-bit depth buffer that DCS renders each view with, so the jet and cockpit hide the cloud behind them.

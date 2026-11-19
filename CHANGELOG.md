@@ -6,7 +6,7 @@ Not released yet. This list grows until it is.
 
 ### New
 
-- **Update check.** As DCS starts, SonicBoom3D asks GitHub whether there's a newer version. If there is, a window in the main menu says so (`1.3 → 1.4`) with the sound of a sonic boom, never over a mission:
+- **Update check.** As DCS starts, SonicBoom3D asks GitHub whether there's a newer version. If there is, a window in the main menu says so (`1.3 → 1.4`) with a short chime, never over a mission:
   - **Update now** downloads it and installs it for you. Restart DCS to use it.
   - **Open download page** opens its page in your browser, to install it yourself.
   - **Skip** doesn't ask about that version again.

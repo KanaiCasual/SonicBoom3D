@@ -1,6 +1,6 @@
 -- SonicBoom3D's update check, run by the hook (Scripts\Hooks\SonicBoom3D.lua) as DCS starts: the DLL asks GitHub
 -- for the mod's latest release, off DCS's threads; if it's newer than this one (entry.lua's version), DCS's own
--- message window says so in the main menu, with the boom of Sounds\update.wav, never in a mission:
+-- message window says so in the main menu, with the chime of Sounds\update.wav, never in a mission:
 --   Update now          the DLL downloads it and puts it in place of this one, for DCS's next start
 --   Open download page  its page on GitHub, in your browser, to download it yourself
 --   Skip <version>      not asked about that version again (Saved Games\DCS\Config\SonicBoom3D update.lua)
