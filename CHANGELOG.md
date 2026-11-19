@@ -8,9 +8,9 @@ Not released yet. This list grows until it is.
 
 - **Update check.** As DCS starts, SonicBoom3D asks GitHub whether there's a newer version. If there is, a window in the main menu says so (`1.3 → 1.4`) with a short chime, never over a mission:
   - **Update now** downloads it and installs it for you. Restart DCS to use it.
-  - **Open download page** opens its page in your browser, to install it yourself.
+  - **Release page** opens its page in your browser, to install it yourself.
   - **Skip** doesn't ask about that version again.
-  - **Remind me later** (or Esc) asks again next time DCS starts.
+  - **Remind later** (or Esc) asks again next time DCS starts.
 
   Nothing about you is sent. `UPDATE_CHECK = false` at the top of `Scripts\Hooks\SonicBoom3D.lua` turns it off.
 

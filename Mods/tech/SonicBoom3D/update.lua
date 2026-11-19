@@ -2,9 +2,10 @@
 -- for the mod's latest release, off DCS's threads; if it's newer than this one (entry.lua's version), DCS's own
 -- message window says so in the main menu, with the chime of Sounds\update.wav, never in a mission:
 --   Update now          the DLL downloads it and puts it in place of this one, for DCS's next start
---   Open download page  its page on GitHub, in your browser, to download it yourself
+--   Release page        its page on GitHub, in your browser, to download it yourself
 --   Skip <version>      not asked about that version again (Saved Games\DCS\Config\SonicBoom3D update.lua)
---   Remind me later     asked again next time DCS starts (Esc too)
+--   Remind later        asked again next time DCS starts (Esc too)
+-- DCS's buttons are 100 px, so the labels are short (test_sonicboom.py measures them in its font).
 local M = {}
 
 M.API = "https://api.github.com/repos/KanaiCasual/SonicBoom3D/releases/latest"
@@ -69,7 +70,7 @@ function M.start(SB, writedir, say, clock)
 			MsgWindow.info(string.format("SonicBoom3D %s is installed.\n\nRestart DCS to use it.", latest), CAPTION, "OK"):show()
 		else
 			say("update: couldn't install " .. latest .. ": " .. tostring(why))
-			local OPEN = "Open download page"
+			local OPEN = "Release page"
 			local h = MsgWindow.warning(string.format("SonicBoom3D couldn't update itself:\n%s\n\nYou can download %s from its page instead.",
 				tostring(why), latest), CAPTION, OPEN, "Close")
 			function h:onChange(button) if button == OPEN then SB.open(page) end end
@@ -79,7 +80,7 @@ function M.start(SB, writedir, say, clock)
 	end
 
 	local function ask(latest, page)
-		local NOW, PAGE, SKIP, LATER = "Update now", "Open download page", "Skip " .. latest, "Remind me later"
+		local NOW, PAGE, SKIP, LATER = "Update now", "Release page", "Skip " .. latest, "Remind later"
 		SB.play(writedir .. "Mods\\tech\\SonicBoom3D\\Sounds\\update.wav")
 		local h = MsgWindow.info(string.format("A new version of SonicBoom3D is available.\n\n%s  \226\134\146  %s", current, latest),
 			CAPTION, NOW, PAGE, SKIP, LATER)

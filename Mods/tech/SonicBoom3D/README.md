@@ -70,9 +70,9 @@ To check the cone lines up without going supersonic, tick **Test mode** on its S
 As DCS starts, SonicBoom3D asks GitHub whether there's a newer version (its latest release, `KanaiCasual/SonicBoom3D`; nothing about you is sent). If there is, a window says so in the main menu, `1.2 → 1.3`, with a short chime, never over a mission:
 
 - **Update now** downloads it and puts it in place of this one. Restart DCS to use it. Only the mod's own files are written: `Mods\tech\SonicBoom3D` and `Scripts\Hooks\SonicBoom3D.lua` (settings changed at the top of the hook go back to the release's; the Special page's are kept). If it can't, it says why and offers the download page.
-- **Open download page** opens its release page in your browser, to download the zip and install it yourself.
+- **Release page** opens its page on GitHub in your browser, to download the zip and install it yourself.
 - **Skip 1.3** doesn't ask about that version again (kept in `Saved Games\DCS\Config\SonicBoom3D update.lua`; delete it to be asked).
-- **Remind me later** (or Esc) asks again next time DCS starts.
+- **Remind later** (or Esc) asks again next time DCS starts.
 
 `dcs.log` has a `SONICBOOM` line with what the check found. `UPDATE_CHECK = false` at the top of the hook turns it off.
 
