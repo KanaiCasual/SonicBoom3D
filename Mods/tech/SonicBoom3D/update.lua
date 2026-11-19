@@ -122,9 +122,12 @@ function M.start(SB, writedir, say, clock)
 end
 
 -- What's waiting (the answer, the popup, an install), run once a frame; done when it says so.
+-- Taken off while it runs: DCS's MsgWindow show() is modal, running frames of its own (and this) until it's closed.
 function M.tick()
 	local step = M.next
-	if step and step() and M.next == step then M.next = nil end
+	if not step then return end
+	M.next = nil
+	if not step() and M.next == nil then M.next = step end
 end
 
 return M
