@@ -37,7 +37,7 @@ It's drawn as a real volume, not flat sprites:
 
 ## Install
 
-1. Extract `SonicBoom3D-1.2.zip` into `C:\Users\<you>\Saved Games\DCS\` (or add it to OvGME as is). You get:
+1. Extract `SonicBoom3D-1.3.zip` into `C:\Users\<you>\Saved Games\DCS\` (or add it to OvGME as is). You get:
    - `Mods\tech\SonicBoom3D\`, the mod: `bin\SonicBoom3D.dll`, which draws the cone into DCS's picture, its icon (`Theme`), its settings page (`Options`) and this read-me
    - `Scripts\Hooks\SonicBoom3D.lua`, the hook that feeds your jet and camera to the DLL
 2. Restart DCS.
@@ -64,6 +64,17 @@ To check that it's working: the SonicBoom3D icon is on the main menu's bar (it's
   - `fov from DCS's camera` means the cone follows zoom. `from the Default FOV setting` means it couldn't find DCS's camera and is using your setting instead. This also shows while the game is paused.
 
 To check the cone lines up without going supersonic, tick **Test mode** on its Special page. The cone then shows at any speed, even parked, at full strength, so it holds steady instead of flashing. Untick it afterwards.
+
+## Updates
+
+As DCS starts, SonicBoom3D asks GitHub whether there's a newer version (its latest release, `KanaiCasual/SonicBoom3D`; nothing about you is sent). If there is, a window says so in the main menu, `1.2 → 1.3`, with the sound of a sonic boom, never over a mission:
+
+- **Update now** downloads it and puts it in place of this one. Restart DCS to use it. Only the mod's own files are written: `Mods\tech\SonicBoom3D` and `Scripts\Hooks\SonicBoom3D.lua` (settings changed at the top of the hook go back to the release's; the Special page's are kept). If it can't, it says why and offers the download page.
+- **Open download page** opens its release page in your browser, to download the zip and install it yourself.
+- **Skip 1.3** doesn't ask about that version again (kept in `Saved Games\DCS\Config\SonicBoom3D update.lua`; delete it to be asked).
+- **Remind me later** (or Esc) asks again next time DCS starts.
+
+`dcs.log` has a `SONICBOOM` line with what the check found. `UPDATE_CHECK = false` at the top of the hook turns it off.
 
 ## Uninstall
 
@@ -123,6 +134,7 @@ The rest are at the top of `Scripts\Hooks\SonicBoom3D.lua`; restart DCS after ch
 | `SCATTER_TEST` | false | A test of fuller lighting, regardless of cost: half-length steps, a 12-step march toward the sun right across the cone through all the vapor's detail, light scattered several times over, and the sky's light shaded by the vapor above. About 5 to 7 times the GPU time (6.4 ms with the cone filling a 4K screen, 8.5 ms at 25 m); not for VR |
 | `TEST_MODE` | false | Show the cone at any speed and height |
 | `ADVANCED_LOGGING` | false | More in `dcs.log` for bug reports: a status line every 10 s, a line per run of frames shown without the vapor in DCS's picture and per short gap in the vapor, the first three runs captured |
+| `UPDATE_CHECK` | true | Ask GitHub for a newer version as DCS starts (see Updates) |
 
 Each jet's cone is placed and sized from its own shape (in `Mods\tech\SonicBoom3D\jets.lua`, which the page shares), taken from DCS's aircraft files (`CoreMods\aircraft`) and measured in DCS:
 
@@ -200,7 +212,7 @@ It costs nothing when you're not capturing. With **Advanced logging** on it also
 
 ## For developers
 
-- `src\SonicBoom3D.cpp` is the DLL.
+- `src\SonicBoom3D.cpp` is the DLL, with `src\update.cpp`, its update check: GitHub's latest release fetched with WinHTTP on a thread of its own (the DLL kept loaded while it runs), its zip unpacked with Windows' `tar` into `%TEMP%` and only the mod's files copied over, the loaded DLL moved aside to `SonicBoom3D.dll.old` (removed at the next start); the popup and its buttons are `Mods\tech\SonicBoom3D\update.lua`, its sound `Sounds\update.wav` (`tools\make_update_sound.py`: a sonic boom's N-wave, two sharp steps a tenth of a second apart, and a rumble).
   - **Hooks:** it hooks `IDXGISwapChain::Present` and DCS's render-target changes. It saves and restores every piece of pipeline state it touches. Direct3D rewrites parts of the context's method table during the frame, so the hooks are put back on every target change.
   - **Cameras:** it reads DCS's cameras from the constant buffers DCS uploads. Each camera block holds the view, inverse view, projection and view-projection matrices. The one with the screen's aspect is the main view; one next to your head with a different aspect, or one looking back along the jet with its own near clip (the F-14's), is the mirror.
   - **Depth:** each ray stops at the 32-bit depth buffer that DCS renders each view with, so the jet and cockpit hide the cloud behind them.
@@ -220,6 +232,7 @@ It costs nothing when you're not capturing. With **Advanced logging** on it also
   - DCS's light: its sun brighter, and the same into a multisampled (MSAA) picture, under its cloud shadow the sky's light alone, the jet's own lights in their colour, the sky's light from its ambient cube or environment cube, the cone placed by DCS's camera and clock, and a cone moved on a step too far for a frame counted and logged
   - GPU time at 4K, and that lower quality costs less and higher more
   - the frame capture
+  - the update check without the network: versions compared, a release's page and zip found in GitHub's answer, installed into a Saved Games folder whose DLL is held open, only the mod's own files copied, the old DLL removed at the next start
 
   It also writes images to look at: `build\harness_side.bmp`, `harness_rear.bmp`, `harness_close.bmp` and `harness_dusk.bmp`, a cone set taller above and flatter below, `harness_shaped.bmp` and `harness_shaped_rear.bmp`, and one pulling 5.5 G and one pushing -3 G, `harness_pulling.bmp` and `harness_pushing.bmp`.
-- `test_sonicboom.py` tests both Lua hooks against a mocked DCS (`pip install lupa`), the Special page's settings reaching the DLL included, and the page's "Cone per aircraft" with DCS's widgets mocked from `options.dlg`.
+- `test_sonicboom.py` tests both Lua hooks against a mocked DCS (`pip install lupa`), the Special page's settings reaching the DLL included, the page's "Cone per aircraft" with DCS's widgets mocked from `options.dlg`, and the update popup with DCS's GUI mocked: shown in the main menu and never over a mission, and what each of its buttons does.

@@ -42,6 +42,7 @@ local CFG = {
 	TEST_MODE = false,     -- page: show the cone at any speed and height, to check it lines up
 	ADVANCED_LOGGING = false, -- page: more in dcs.log for bug reports: a status line every 10 s, a line for each run of
 	                       -- frames DCS showed without the vapor in its view, and the first three of those captured (capture-N.txt in the DLL's folder)
+	UPDATE_CHECK = true,   -- as DCS starts, ask GitHub whether there's a newer SonicBoom3D, and if so say so in the main menu
 }
 
 -- The Special page's settings (Mods\tech\SonicBoom3D\Options): each its name there, the setting above it
@@ -426,8 +427,11 @@ local function sendFrame()
 end
 
 local cb = {}
+-- The update check (Mods\tech\SonicBoom3D\update.lua), started below once the DLL is loaded.
+local UPDATE
 
 function cb.onSimulationStart()
+	if UPDATE then UPDATE.inMission = true end
 	readDefaultFov()
 	readMissionClock()
 	readOptions()
@@ -458,6 +462,7 @@ end
 
 function cb.onSimulationStop()
 	if SB then SB.frame(0) end
+	if UPDATE then UPDATE.inMission = false end
 end
 
 package.cpath = package.cpath .. ";" .. DIR .. "?.dll"
@@ -465,6 +470,12 @@ local ok, mod = pcall(require, "SonicBoom3D")
 if ok and type(mod) == "table" then
 	SB = mod
 	say("3D cone loaded: " .. SB.status())
+	local started, err = pcall(function()   -- whatever happens to it, never the cone
+		if not CFG.UPDATE_CHECK then return end
+		UPDATE = dofile(lfs.writedir() .. "Mods\\tech\\SonicBoom3D\\update.lua")
+		UPDATE.start(SB, lfs.writedir(), say)
+	end)
+	if not started then say("update check: " .. tostring(err)) end
 else
 	say("3D cone not loaded: " .. tostring(mod))
 end

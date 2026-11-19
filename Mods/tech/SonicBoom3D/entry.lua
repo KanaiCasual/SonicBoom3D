@@ -6,7 +6,7 @@ declare_plugin("SonicBoom3D", {
 	dirName = current_mod_path,
 	displayName = _("SonicBoom3D"),
 	shortName = "SonicBoom3D",
-	version = "1.2",
+	version = "1.3",
 	state = "installed",
 	info = _("A 3D vapor cone around your jet near Mach 1, and around the jets near you: drawn into DCS's own picture and lit by its sun, with its shadow on the ground and its reflection in water. Only you see it.\n\nSettings, quality included: Options > Special > SonicBoom3D."),
 	binaries = {},   -- the hook loads the DLL in bin itself
