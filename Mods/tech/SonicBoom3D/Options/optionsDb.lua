@@ -1,6 +1,10 @@
 -- The settings on SonicBoom3D's Special page, and what they start at (as the hook's own, CFG in
 -- Scripts\Hooks\SonicBoom3D.lua). The hook reads them as you change them, in flight too.
 local DbOption = require("Options.DbOption")
+local lfs = require("lfs")
+
+-- The mod's folder: DCS names it in modulelocation while it loads this file.
+local DIR = (type(modulelocation) == "string" and modulelocation:gsub("[\\/]+$", "") or lfs.writedir() .. "Mods\\tech\\SonicBoom3D") .. "\\"
 
 return {
 	enabled    = DbOption.new():setValue(true):checkbox(),
@@ -10,10 +14,7 @@ return {
 		DbOption.Item(_("High")):Value(3),
 		DbOption.Item(_("Ultra")):Value(4),
 	}),
-	density    = DbOption.new():setValue(100):slider(DbOption.Range(25, 200)),   -- percent
-	width      = DbOption.new():setValue(100):slider(DbOption.Range(70, 150)),
-	pulse      = DbOption.new():setValue(100):slider(DbOption.Range(0, 100)),
-	soft       = DbOption.new():setValue(false):checkbox(),
+	softness   = DbOption.new():setValue(0):slider(DbOption.Range(0, 100)),     -- percent: 0 the crisp cone, 100 the softer
 	jetShade   = DbOption.new():setValue(true):checkbox(),
 	shadow     = DbOption.new():setValue(true):checkbox(),
 	reflection = DbOption.new():setValue(true):checkbox(),
@@ -27,4 +28,11 @@ return {
 		DbOption.Item(_("The nearest 50")):Value(50),
 	}),
 	testMode   = DbOption.new():setValue(false):checkbox(),
+	advancedLogging = DbOption.new():setValue(false):checkbox(),
+	-- Cone per aircraft: each jet's presets and the one in use (see jets.lua). No widget of DCS's binds it: the
+	-- page's jet... widgets are wired up by jetsPage.lua as it opens.
+	jets       = { value = {} },
+	callbackOnShowDialog = function(container)
+		dofile(DIR .. "Options\\jetsPage.lua")(container, dofile(DIR .. "jets.lua"), require("Options.Data"))
+	end,
 }

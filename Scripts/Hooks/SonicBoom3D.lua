@@ -7,6 +7,9 @@
 
 local Sim = Sim or DCS -- DCS 2.9.31 renamed DCS.* to Sim.*
 
+-- The settings below are in feet and nautical miles; DCS works in metres, so they're turned into metres where used.
+local FT, NM = 0.3048, 1852   -- metres in a foot, in a nautical mile
+
 -- The settings. Those on the Special page (the ones marked) take the place of these, live, in flight too;
 -- these are what's used before they're changed there.
 local CFG = {
@@ -16,40 +19,43 @@ local CFG = {
 	MACH_ON_FULL = 0.97,   -- ...is solid, always there, from here...
 	MACH_OFF_START = 1.01, -- ...starts to break up here...
 	MACH_OFF_END = 1.03,   -- ...and is gone here (real vapor cones are mostly just below Mach 1)
-	G_EARLIER = 0.02,      -- pulling G brings it in earlier: this much Mach per G over 1, up to 4 G's worth
-	ALT_FULL_M = 3000,     -- full strength below this altitude (m above sea level)...
-	ALT_FADE_M = 12000,    -- ...thinning to ALT_MIN by this one, where the air is dry
+	G_EARLIER = 0.02,      -- G brings it in earlier, pulling or pushing: this much Mach per G over 1 either way, up to 4 G's worth
+	ALT_FULL_FT = 10000,   -- full strength below this altitude (ft above sea level)...
+	ALT_FADE_FT = 40000,   -- ...thinning to ALT_MIN by this one, where the air is dry
 	ALT_MIN = 0.15,
-	DENSITY = 2,           -- page: how thick the vapor looks: 1 = thinner and more see-through, 4 = twice as thick
-	CONE_WIDTH = 1,        -- page: how far out the cone's rim reaches: 1 = 1.2 half-spans, as in photos; its start and end stay put
+	DENSITY = 2,           -- how thick the vapor looks: 1 = thinner and more see-through, 4 = twice as thick (each jet's Thickness on the page scales it)
+	CONE_WIDTH = 1,        -- how far out the cone's rim reaches: 1 = 1.2 half-spans, as in photos (each jet's Width on the page scales it)
 	JET_SHADE = true,      -- page: the jet's wing and fuselage shade its vapor from the sun
 	SHADOW = true,         -- page: its shadow on the ground, the sea and the jet
 	REFLECTION = true,     -- page: its reflection in water, as DCS reflects jets
-	PULSE = 1,             -- page: how much it flashes forming and breaking up, and breathes when solid: 0 = steady, 1 = like real footage
-	SOFT = false,          -- page: a softer cone, a smooth mist with soft edges (as the JF-17 draws its own), not crisp faces
+	PULSE = 1,             -- how much it flashes forming and breaking up, and breathes when solid: 0 = steady, 1 = like real footage (each jet's Flashing on the page scales it)
+	SOFTNESS = 0,          -- page: from the crisp cone (0) to the softer, a smooth mist with soft edges as the JF-17 draws its own (1); between, a blend
 	SHOW_IN_COCKPIT = true, -- page
-	COCKPIT_RADIUS = 8,    -- camera this close to your jet (m) counts as the cockpit view
+	COCKPIT_RADIUS_FT = 26, -- camera this close to your jet (ft) counts as the cockpit view
 	SHOW_IN_MIRRORS = true, -- page
 	MIRROR_BRIGHTNESS = 1, -- the vapor's brightness in the mirrors (DCS renders them before tonemapping)
-	MAX_DISTANCE = 3000,   -- no cone when the camera is further than this from your jet (m)
+	MAX_DISTANCE_NM = 1.6, -- no cone when the camera is further than this from your jet (nm)
 	OTHER_JETS = 25,       -- page: vapor on this many of the nearest other jets too, 0 = only yours
-	OTHER_DISTANCE = 8000, -- ...within this far of the camera (m)
+	OTHER_DISTANCE_NM = 4.3, -- ...within this far of the camera (nm)
 	DCS_LIGHT = true,      -- draw it into DCS's own HDR picture, lit with DCS's light; false = onto the finished picture, lit its own way
 	SCATTER_TEST = false,  -- true: much fuller lighting, to see how it could look; very slow (many times the GPU time)
 	TEST_MODE = false,     -- page: show the cone at any speed and height, to check it lines up
+	ADVANCED_LOGGING = false, -- page: more in dcs.log for bug reports: a status line every 10 s, a line for each run of
+	                       -- frames DCS showed without the vapor in its view, and the first three of those captured (capture-N.txt in the DLL's folder)
 }
 
 -- The Special page's settings (Mods\tech\SonicBoom3D\Options): each its name there, the setting above it
 -- takes the place of, and how (the sliders are in percent).
 local OPTIONS = {
 	{ "enabled", "ENABLED" }, { "quality", "QUALITY" },
-	{ "density", "DENSITY", function(v) return 2 * v / 100 end },   -- 100% = 2
-	{ "width", "CONE_WIDTH", function(v) return v / 100 end },
-	{ "pulse", "PULSE", function(v) return v / 100 end },
-	{ "soft", "SOFT" }, { "jetShade", "JET_SHADE" }, { "shadow", "SHADOW" }, { "reflection", "REFLECTION" },
+	{ "softness", "SOFTNESS", function(v) return v / 100 end },
+	{ "jetShade", "JET_SHADE" }, { "shadow", "SHADOW" }, { "reflection", "REFLECTION" },
 	{ "cockpit", "SHOW_IN_COCKPIT" }, { "mirrors", "SHOW_IN_MIRRORS" }, { "otherJets", "OTHER_JETS" },
-	{ "testMode", "TEST_MODE" },
+	{ "testMode", "TEST_MODE" }, { "advancedLogging", "ADVANCED_LOGGING" },
 }
+-- And the cone's settings per aircraft (the page's "Cone per aircraft", its "jets"; see jets.lua): as read, and
+-- each jet's worked out from them, kept until they change.
+local savedJets, jetCache = nil, {}
 local DEFAULTS = {}
 for k, v in pairs(CFG) do DEFAULTS[k] = v end
 local hasOptions, OptionsData = pcall(require, "Options.Data")
@@ -64,86 +70,33 @@ local function readOptions()
 		end
 		CFG[o[2]] = value
 	end
+	local jets = nil
+	if hasOptions then
+		local ok, v = pcall(OptionsData.getPlugin, "SonicBoom3D", "jets")
+		if ok and type(v) == "table" then jets = v end
+	end
+	if jets ~= savedJets then savedJets, jetCache = jets, {} end
 end
 
 -- Jets whose module draws its own vapor cone, when a person flies them: no second one on top. An AI one
 -- (its module isn't running) gets this cone. Delete a line to get this cone on it always.
 local OWN_VAPOR = { ["JF-17"] = true, ["M-2000C"] = true }
 
--- Each jet's shape: the pilot's seat, the wingtip, where the wing ends (te: its trailing edge where it meets
--- the fuselage, or out at the tips when they're swept back), where the wing begins (le: its leading edge
--- where it meets the fuselage, or the glove of a swing-wing; not the strakes or canards ahead of it) and the
--- engine nozzles, in metres ahead of the model's origin; and the wingspan and length in metres. From DCS's
--- own aircraft files (CoreMods\aircraft); te, le, and all of the AI-only jets, measured from straight-down
--- views of each model in DCS, set against its box (the size the mission scripting reports for it); where
--- that box is only a nominal size (the Viggen, the MiG-23 and 27, the Su-17), corrected by where the
--- vapor's back stood against the wing in DCS.
--- The shock is a flat plane across the flight path: once the vapor's solid, at the wing's trailing edge (te;
--- the nozzles for a jet with none), crossing the tips about halfway along them. Photos put it further back,
--- by the nozzles (F/A-18C -8.6, F-15E -6.2), but drawn there the cones look too far back in DCS.
--- While the vapor forms it stands further forward, halfway toward the wing root. Ahead of it the vapor fills
--- a straight-sided cone, its point on the fuselage 40% of the way back
--- from le to te (where the air over the wing goes supersonic: the F/A-18C's measured -2.1, against -2.47);
--- its rim past the tips.
--- Flaming Cliffs jets have no readable file. For them (marked measured) the seat is measured from the
--- cockpit camera, and the rest kept where it is behind it on a sister airframe's file.
-local GEOMETRY = {
-	["F-15ESE"]        = { pilot = 6.51, tip = -3.90, nozzle = -6.75, span = 13.05, length = 19.43, te = -4.30, le = 1.20 },
-	["F-16C_50"]       = { pilot = 3.32, tip = -2.70, nozzle = -6.00, span = 9.45,  length = 14.52, te = -4.00, le = -0.80 },
-	["FA-18C_hornet"]  = { pilot = 3.50, tip = -2.47, nozzle = -8.01, span = 11.43, length = 17.07, te = -4.45, le = -1.15 },
-	["F-4E-45MC"]      = { pilot = 5.00, tip = -3.99, nozzle = -4.94, span = 11.70, length = 19.20, te = -5.00, le = 1.60 },
-	["F-5E-3"]         = { pilot = 3.02, tip = -2.78, nozzle = -6.05, span = 8.53,  length = 14.68, te = -2.98, le = 0.00 },  -- its file's nozzle is past the tail
-	["AJS37"]          = { pilot = 4.80, tip = -4.53, nozzle = -5.80, span = 10.60, length = 16.30, te = -4.50, le = 1.50 },  -- its file's nozzle is a rough -3
-	["MiG-21Bis"]      = { pilot = 2.71, tip = -2.50, nozzle = -6.00, span = 7.15,  length = 14.50, te = -2.90, le = 2.10 },
-	["MiG-29 Fulcrum"] = { pilot = 4.64, tip = -3.80, nozzle = -6.53, span = 11.36, length = 17.32, te = -3.94, le = 0.15 },
-	["MiG-19P"]        = { pilot = 3.76, tip = -2.54, nozzle = -4.00, span = 9.00,  length = 13.03 },
-	["F-100D"]         = { pilot = 3.63, tip = -4.31, nozzle = -4.43, span = 11.81, length = 14.35, te = -4.70, le = 2.60 },
-	["F-86F Sabre"]    = { pilot = 1.70, tip = -3.21, nozzle = -6.25, span = 11.30, length = 11.43 },
-	["MiG-15bis"]      = { pilot = 1.77, tip = -2.25, nozzle = -4.11, span = 10.08, length = 10.11 },
-	["Hawk"]           = { pilot = 4.00, tip = -1.76, nozzle = -4.85, span = 9.42,  length = 11.98 },
-	["AV8BNA"]         = { pilot = 3.43, tip = -2.54, nozzle = -2.89, span = 9.24,  length = 14.12 },
-	["Mirage-F1"]      = { pilot = 3.19, tip = -3.50, nozzle = -7.50, span = 8.40,  length = 15.30, te = -3.50, le = -0.10 },  -- every Mirage-F1 version
-	["J-11A"]          = { pilot = 7.92, tip = -4.50, nozzle = -6.89, span = 14.70, length = 21.94, te = -4.00, le = 1.60 },
-	["JF-17"]          = { pilot = 4.45, tip = -2.90, nozzle = -5.51, span = 8.50,  length = 14.25, te = -2.84, le = 0.35 },
-	["M-2000C"]        = { pilot = 2.68, tip = -5.00, nozzle = -6.59, span = 9.13,  length = 14.36, te = -5.00, le = 1.80 },
-	["F-14B"]          = { pilot = 4.00, tip = -5.00, nozzle = -6.67, span = 11.65, length = 19.10, te = -6.50, le = 2.50 },  -- wings swept back, as near Mach 1
-	["F-14A-135-GR"]   = { pilot = 4.00, tip = -5.00, nozzle = -6.67, span = 11.65, length = 19.10, te = -6.50, le = 2.50 },
-	["F-15C"]          = { pilot = 6.51, tip = -3.90, nozzle = -6.75, span = 13.05, length = 19.43, te = -5.00, le = 1.10, measured = true },  -- as the F-15E
-	["Su-27"]          = { pilot = 7.92, tip = -4.50, nozzle = -6.89, span = 14.70, length = 21.94, te = -3.80, le = 1.80, measured = true },  -- as the J-11A
-	["Su-33"]          = { pilot = 7.92, tip = -4.50, nozzle = -6.89, span = 14.70, length = 21.19, te = -3.80, le = 1.80, measured = true },
-	["MiG-29A"]        = { pilot = 4.64, tip = -3.80, nozzle = -6.53, span = 11.36, length = 17.32, te = -3.94, le = 0.15, measured = true },  -- as the MiG-29
-	["MiG-29S"]        = { pilot = 4.64, tip = -3.80, nozzle = -6.53, span = 11.36, length = 17.32, te = -3.94, le = 0.15, measured = true },
-	["MiG-29G"]        = { pilot = 4.64, tip = -3.80, nozzle = -6.53, span = 11.36, length = 17.32, te = -3.94, le = 0.15, measured = true },
-	-- AI only, all measured in DCS; the swing-wings swept back, as at speed
-	["F-16A"]          = { pilot = 4.26, tip = -2.25, nozzle = -5.90, span = 9.45,  length = 15.06, te = -2.45, le = 0.45 },  -- every AI F-16: its own model
-	["F-5E"]           = { pilot = 3.38, tip = -2.46, nozzle = -6.08, span = 8.13,  length = 14.45, te = -2.46, le = 0.55 },
-	["Mirage 2000-5"]  = { pilot = 3.70, tip = -4.35, nozzle = -6.60, span = 9.13,  length = 14.36, te = -4.65, le = 1.75 },
-	["Tornado IDS"]    = { pilot = 4.00, tip = -5.56, nozzle = -7.56, span = 8.60,  length = 16.72, te = -6.00, le = 1.20 },
-	["MiG-23MLD"]      = { pilot = 4.30, tip = -5.35, nozzle = -7.10, span = 7.78,  length = 16.70, te = -5.85, le = 2.05 },
-	["MiG-27K"]        = { pilot = 5.40, tip = -5.00, nozzle = -6.80, span = 7.78,  length = 17.08, te = -5.50, le = 2.20 },
-	["MiG-25PD"]       = { pilot = 6.50, tip = -4.50, nozzle = -7.80, span = 14.01, length = 19.75, te = -5.00, le = 0.30 },
-	["MiG-31"]         = { pilot = 6.40, tip = -6.75, nozzle = -10.5, span = 13.46, length = 22.69, te = -7.25, le = -0.05 },
-	["Su-17M4"]        = { pilot = 6.00, tip = -4.35, nozzle = -7.80, span = 10.02, length = 19.02, te = -4.85, le = 1.85 },
-	["Su-24M"]         = { pilot = 6.10, tip = -7.80, nozzle = -12.1, span = 10.37, length = 22.67, te = -8.25, le = 3.45 },
-	["Su-30"]          = { pilot = 8.60, tip = -4.50, nozzle = -6.89, span = 14.70, length = 21.94, te = -3.90, le = 1.70 },
-	["Su-34"]          = { pilot = 8.50, tip = -4.00, nozzle = -7.00, span = 14.70, length = 23.34, te = -4.25, le = 1.35 },
-	["B-1B"]           = { pilot = 21.0, tip = -15.0, nozzle = -15.5, span = 24.10, length = 44.50, te = -16.1, le = 3.70 },  -- nozzles under the wing
-	["Tu-160"]         = { pilot = 21.0, tip = -17.5, nozzle = -16.0, span = 35.60, length = 54.10, te = -18.9, le = 2.10 },  -- nozzles under the wing
-	["Tu-22M3"]        = { pilot = 15.3, tip = -14.6, nozzle = -20.6, span = 23.30, length = 42.46, te = -15.6, le = 1.10 },
-}
--- Other names for the same models.
-local SAME_AS = {
-	["F-15E"] = "F-15ESE", ["F-16A MLU"] = "F-16A", ["F-16C bl.50"] = "F-16A", ["F-16C bl.52d"] = "F-16A",
-	["F/A-18A"] = "FA-18C_hornet", ["F/A-18C"] = "FA-18C_hornet", ["QF-4E"] = "F-4E-45MC", ["F-5E-3_FC"] = "F-5E-3",
-	["F-14A-135-GR-Early"] = "F-14A-135-GR", ["F-14A-95-GR"] = "F-14A-135-GR", ["F-14BU"] = "F-14B",
-	["Tornado GR4"] = "Tornado IDS", ["MiG-25RBT"] = "MiG-25PD", ["Su-24MR"] = "Su-24M",
-	["MiG-15bis_FC"] = "MiG-15bis", ["F-86F_FC"] = "F-86F Sabre",
-}
--- Anything else: a mid-sized fighter, its seat measured from the cockpit camera.
-local DEFAULT_GEOMETRY = { pilot = 4.0, tip = -3.0, nozzle = -6.5, span = 11.0, length = 16.0, te = -4.5, le = 0.0, measured = true }
-
 local lfs = require("lfs")
 local DIR = lfs.writedir() .. "Mods\\tech\\SonicBoom3D\\bin\\"
+-- Each jet's shape, and the cone's settings per jet: the mod's jets.lua, which the Special page shares.
+local JETS = dofile(lfs.writedir() .. "Mods\\tech\\SonicBoom3D\\jets.lua")
+
+-- A jet's cone settings, as set on the page for its type: move and front (ft), the rest in percent.
+local function settingsFor(name)
+	local key = JETS.keyOf(name)
+	local s = jetCache[key]
+	if not s then
+		s = JETS.settings(savedJets, key)
+		jetCache[key] = s
+	end
+	return s
+end
 
 local SB, fov, errored, nextStatus = nil, 78, false, nil
 
@@ -159,14 +112,14 @@ end
 -- in or breaks up. As in real life, pulling G forms it at a lower Mach.
 local function strength(mach, load)
 	if CFG.TEST_MODE then return 1 end
-	local early = CFG.G_EARLIER * math.min(math.max(load - 1, 0), 4)
+	local early = CFG.G_EARLIER * math.min(math.max(math.abs(load) - 1, 0), 4)
 	return ramp(mach, CFG.MACH_ON_START - early, CFG.MACH_ON_FULL - early) * (1 - ramp(mach, CFG.MACH_OFF_START, CFG.MACH_OFF_END))
 end
 
 -- How thick it is at this altitude: thinner high up, where the air is dry. Thinner, not flashing.
 local function thickness(alt)
 	if CFG.TEST_MODE then return CFG.DENSITY end
-	return CFG.DENSITY * (1 - (1 - CFG.ALT_MIN) * ramp(alt, CFG.ALT_FULL_M, CFG.ALT_FADE_M))
+	return CFG.DENSITY * (1 - (1 - CFG.ALT_MIN) * ramp(alt, CFG.ALT_FULL_FT * FT, CFG.ALT_FADE_FT * FT))
 end
 
 -- DCS's Default FOV option, used until the DLL finds the live camera FOV on the GPU.
@@ -266,7 +219,7 @@ local function measureCockpit(name, g, c, camUp)
 	local inside = false   -- close to the centreline of the jet in one of the recent frames
 	for L = 0, #history - 1 do
 		local ahead, off = fromJet(c, history[L + 1])
-		if off < 1.5 and math.abs(ahead) < CFG.COCKPIT_RADIUS then inside = true end
+		if off < 1.5 and math.abs(ahead) < CFG.COCKPIT_RADIUS_FT * FT then inside = true end
 	end
 	if not inside then return end
 	local hb = history[math.min(lag, #history - 1) + 1]
@@ -323,8 +276,7 @@ local function placement(g, yours)
 end
 
 local function geometryOf(name)
-	name = SAME_AS[name] or name
-	return GEOMETRY[name] or (name:find("^Mirage%-F1") and GEOMETRY["Mirage-F1"]) or DEFAULT_GEOMETRY
+	return JETS.geometry(JETS.keyOf(name))
 end
 
 -- Other jets. DCS tells Lua only where they are and which way they point, so, as Tacview does, their
@@ -347,9 +299,10 @@ local function lookAround(c, t)
 		for id, o in pairs(Export.LoGetWorldObjects() or {}) do
 			local p, kind = o.Position, o.Type
 			local own = OWN_VAPOR[o.Name or ""] and o.Flags and o.Flags.Human
+				or not JETS.on(savedJets, JETS.keyOf(o.Name or ""))   -- or its type's cone switched off on the page
 			if id ~= mine and p and kind and kind.level1 == 1 and kind.level2 == 1 and not own then
 				local d2 = (p.x - c.x) ^ 2 + (p.y - c.y) ^ 2 + (p.z - c.z) ^ 2
-				if d2 < CFG.OTHER_DISTANCE ^ 2 then near[#near + 1] = { id, d2 } end
+				if d2 < (CFG.OTHER_DISTANCE_NM * NM) ^ 2 then near[#near + 1] = { id, d2 } end
 			end
 		end
 		table.sort(near, function(a, b) return a[2] < b[2] end)
@@ -390,24 +343,28 @@ local function otherJet(id, j, o, t)
 	local ux, uy, uz = jetUp(h[8], h[9], h[10] * bankSign)
 	local load = (j.a[1] * ux + j.a[2] * uy + j.a[3] * uz) / 9.81 + uy   -- along its up, gravity included
 	local size, front, shock0, shock1, outer, halfSpan, te, le = placement(geometryOf(o.Name or ""), false)
+	local set = settingsFor(o.Name or "")
 	return { strength(mach, load), h[1], h[2], h[3], h[4], h[5], h[6], h[7] + id % 97 * 7.3,   -- each breathing on its own, timed from its pose
-		size, 1, front, shock0, shock1, outer, halfSpan, ux, uy, uz, load, thickness(p.y), id,
+		size, 1, front + set.front * FT, shock0, shock1, outer, halfSpan, ux, uy, uz, load, thickness(p.y) * set.thickness / 100, id,
 		j.v[1], j.v[2], j.v[3], h[7],   -- its velocity, and when it was where it is, for the DLL to move it on to the picture's time
-		CFG.CONE_WIDTH, te, le }
+		CFG.CONE_WIDTH * set.width / 100, te, le,
+		math.max(CFG.PULSE * set.pulse / 100, 0.001), set.top / 100, set.bottom / 100, set.move * FT }   -- as set for its type
 end
 
 local function sendFrame()
 	readOptions()
+	SB.logging(CFG.ADVANCED_LOGGING and 1 or 0)
 	if not CFG.ENABLED then return SB.frame(0) end
 	local cam = Export.LoGetCameraPosition()
 	if not cam then return SB.frame(0) end
 	local c, t = cam.p, Sim.getModelTime()
 	local me = Export.LoIsOwnshipExportAllowed() and Export.LoGetSelfData()
-	if not (me and me.Position) or OWN_VAPOR[me.Name or ""] then me = nil end
+	if not (me and me.Position) or OWN_VAPOR[me.Name or ""] or not JETS.on(savedJets, JETS.keyOf(me.Name or "")) then me = nil end
 
 	-- your jet as the picture shows it; its nose and up in DCS world axes (x north, y up, z east)
 	local s, h, size, mainView, front, shock0, shock1, outer, halfSpan = 0, { 0, 0, 0, 0, 0, 0 }, 0, false, 0, 0, 0, 0, 0
 	local width, te, le = CFG.CONE_WIDTH, 0, 0
+	local pulse, top, bottom, move = CFG.PULSE, 1, 1, 0   -- and as set on the page for your jet's type
 	local ux, uy, uz, load, density, lla = 0, 0, 0, 1, CFG.DENSITY, me and me.LatLongAlt
 	local vel, seenAt = { x = 0, y = 0, z = 0 }, 0   -- your jet's velocity, and when it was where it's sent
 	if me then
@@ -424,7 +381,7 @@ local function sendFrame()
 		local mach, alt = Export.LoGetMachNumber() or 0, Export.LoGetAltitudeAboveSeaLevel() or 0
 		yourLoad = yourLoad + (load - yourLoad) * 0.05
 		s, density = strength(mach, yourLoad), thickness(alt)
-		mainView = dist <= CFG.MAX_DISTANCE and (dist >= CFG.COCKPIT_RADIUS or CFG.SHOW_IN_COCKPIT)
+		mainView = dist <= CFG.MAX_DISTANCE_NM * NM and (dist >= CFG.COCKPIT_RADIUS_FT * FT or CFG.SHOW_IN_COCKPIT)
 		local tas = Export.LoGetTrueAirSpeed and Export.LoGetTrueAirSpeed()
 		if tas and mach > 0.3 then   -- the speed of sound here tells how warm the mission is
 			warmer = warmer + ((tas / mach) ^ 2 / 401.874 - standardTemperature(alt) - warmer) * 0.02
@@ -432,6 +389,9 @@ local function sendFrame()
 		local g = geometryOf(name)
 		measureCockpit(name, g, c, cam.y)
 		size, front, shock0, shock1, outer, halfSpan, te, le = placement(g, true)
+		local set = settingsFor(name)
+		front, density, width = front + set.front * FT, density * set.thickness / 100, width * set.width / 100
+		pulse, top, bottom, move = pulse * set.pulse / 100, set.top / 100, set.bottom / 100, set.move * FT
 	end
 
 	if t >= nextScan or nextScan - t > 1 then lookAround(c, t) end
@@ -453,11 +413,12 @@ local function sendFrame()
 	local v = { s, h[1], h[2], h[3], h[4], h[5], h[6],
 		c.x, c.y, c.z, cam.x.x, cam.x.y, cam.x.z, cam.y.x, cam.y.y, cam.y.z, cam.z.x, cam.z.y, cam.z.z,
 		me and seenAt or t, fov, size, mainView and 1 or 0, mirror, front, shock0, shock1, sunN, sunU, sunE, outer, halfSpan,   -- the vapor's clock: its pose's
-		ux, uy, uz, load, density, math.max(CFG.PULSE, 0.001), CFG.DCS_LIGHT and 1 or -1, CFG.SCATTER_TEST and 1 or 0, width, 0, CFG.JET_SHADE and 1 or -1,   -- 0: your jet's id
+		ux, uy, uz, yourLoad, density, math.max(pulse, 0.001), CFG.DCS_LIGHT and 1 or -1, CFG.SCATTER_TEST and 1 or 0, width, 0, CFG.JET_SHADE and 1 or -1,   -- G smoothed, as it shapes the cone; 0: your jet's id
 		CFG.QUALITY, CFG.SHADOW and 1 or -1, CFG.REFLECTION and 1 or -1,
 		vel.x or 0, vel.y or 0, vel.z or 0, seenAt,   -- for the DLL to move your jet on to the picture's time
-		te, le, CFG.SOFT and 1 or 0,
-		t }   -- the newest simulation step seen: the step the picture shows is one of these
+		te, le, CFG.SOFTNESS,
+		t,    -- the newest simulation step seen: the step the picture shows is one of these
+		top, bottom, move }
 	for _, jet in ipairs(jets) do
 		for _, x in ipairs(jet) do v[#v + 1] = x end
 	end
@@ -470,9 +431,11 @@ function cb.onSimulationStart()
 	readDefaultFov()
 	readMissionClock()
 	readOptions()
-	say(string.format("settings %s: %s, quality %d, thickness %.2f, width %.2f, shadow %s, reflection %s",
+	local custom = 0
+	for _ in pairs(type(savedJets) == "table" and type(savedJets.use) == "table" and savedJets.use or {}) do custom = custom + 1 end
+	say(string.format("settings %s: %s, quality %d, softness %.2f, shadow %s, reflection %s, advanced logging %s, own presets in use for %d aircraft",
 		hasOptions and "from Options > Special" or "from this file", CFG.ENABLED and "on" or "off", CFG.QUALITY,
-		CFG.DENSITY, CFG.CONE_WIDTH, tostring(CFG.SHADOW), tostring(CFG.REFLECTION)))
+		CFG.SOFTNESS, tostring(CFG.SHADOW), tostring(CFG.REFLECTION), CFG.ADVANCED_LOGGING and "on" or "off", custom))
 	history, seatType, others, nextScan, warmer, yourLoad = {}, nil, {}, 0, 0, 1
 	nextStatus = Sim.getRealTime() + 5
 end
@@ -484,8 +447,11 @@ function cb.onSimulationFrame()
 		errored = true -- one log line, not one per frame
 		say("frame error: " .. tostring(err))
 	end
+	if CFG.ADVANCED_LOGGING then
+		for line in SB.events():gmatch("[^\n]+") do say(line) end
+	end
 	if nextStatus and Sim.getRealTime() >= nextStatus then
-		nextStatus = Sim.getRealTime() + 60
+		nextStatus = Sim.getRealTime() + (CFG.ADVANCED_LOGGING and 10 or 60)
 		say(SB.status())
 	end
 end
