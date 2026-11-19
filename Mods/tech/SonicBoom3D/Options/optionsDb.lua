@@ -34,5 +34,10 @@ return {
 	jets       = { value = {} },
 	callbackOnShowDialog = function(container)
 		dofile(DIR .. "Options\\jetsPage.lua")(container, dofile(DIR .. "jets.lua"), require("Options.Data"))
+		-- Which SonicBoom3D this is, at the right of the title: entry.lua's version, the one the update check goes by.
+		local f = io.open(DIR .. "entry.lua", "rb")
+		local version = f and f:read("*a"):match('version%s*=%s*"([^"]+)"')
+		if f then f:close() end
+		container.sbVersion:setText(version and "Version " .. version or "")
 	end,
 }

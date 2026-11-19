@@ -13,6 +13,7 @@ Not released yet. This list grows until it is.
   - **Remind later** (or Esc) asks again next time DCS starts.
 
   Nothing about you is sent. `UPDATE_CHECK = false` at the top of `Scripts\Hooks\SonicBoom3D.lua` turns it off.
+- **The version you have** shows at the top right of Options > Special > SonicBoom3D.
 
 ## 1.2
 

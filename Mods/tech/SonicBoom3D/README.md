@@ -82,7 +82,7 @@ Delete the `Mods\tech\SonicBoom3D` folder and `Scripts\Hooks\SonicBoom3D.lua`.
 
 ## Settings
 
-On its page, **Options > Special > SonicBoom3D**. Changes apply straight away, in a mission too (Esc, Options).
+On its page, **Options > Special > SonicBoom3D**. Changes apply straight away, in a mission too (Esc, Options). The version you have is at the top right of the page.
 
 | Setting | Default | Meaning |
 |---|---|---|
