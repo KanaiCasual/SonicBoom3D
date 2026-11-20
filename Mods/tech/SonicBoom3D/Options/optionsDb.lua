@@ -30,6 +30,7 @@ return {
 	}),
 	testMode   = DbOption.new():setValue(false):checkbox(),
 	advancedLogging = DbOption.new():setValue(false):checkbox(),
+	machReadout = DbOption.new():setValue(false):checkbox(),
 	-- Cone per aircraft: each jet's presets and the one in use (see jets.lua). No widget of DCS's binds it: the
 	-- page's jet... widgets are wired up by jetsPage.lua as it opens.
 	jets       = { value = {} },

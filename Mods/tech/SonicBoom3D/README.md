@@ -98,6 +98,7 @@ On its page, **Options > Special > SonicBoom3D**. Changes apply straight away, i
 | Other jets | The nearest 25 | None, or the nearest 5, 10, 25 or 50 (`OTHER_JETS`) |
 | Test mode | off | At any speed and height (`TEST_MODE`) |
 | Advanced logging | off | More in `dcs.log` for bug reports, and captures of the first frames the cone misses (`ADVANCED_LOGGING`; see the status line above) |
+| Mach readout | off | For bug reports about the cone showing at the wrong speed: a box at the top left of the screen with each jet's Mach as the cone goes by it, the cone's strength, its airspeed, ground speed, the wind, its altitude and G, four times a second, and every 10 s in `dcs.log` (lines starting `readout:`). Your jet is listed twice: as DCS has it (which your cone goes by), and worked out from its flight path the way every other jet's is (DCS gives Lua only other jets' positions); if those two disagree, the other jets' Mach is off by as much (`MACH_READOUT`) |
 
 **Cone per aircraft.** Each aircraft has its own cone settings, used for every jet of that type, yours and AI (an AI type that shares a model, like the AI F/A-18C, shares its settings; types not listed share **Other jets**). The page opens on the aircraft you're sitting in, or else the one you picked last. Untick **Vapor cone on this aircraft** and no jet of that type gets a cone, yours or AI, whatever its preset (its presets are kept, greyed out, till you tick it again); an AI one switched off doesn't count among the nearest **Other jets** either.
 
@@ -136,6 +137,7 @@ The rest are at the top of `Scripts\Hooks\SonicBoom3D.lua`; restart DCS after ch
 | `SCATTER_TEST` | false | A test of fuller lighting, regardless of cost: half-length steps, a 12-step march toward the sun right across the cone through all the vapor's detail, light scattered several times over, and the sky's light shaded by the vapor above. About 5 to 7 times the GPU time (6.4 ms with the cone filling a 4K screen, 8.5 ms at 25 m); not for VR |
 | `TEST_MODE` | false | Show the cone at any speed and height |
 | `ADVANCED_LOGGING` | false | More in `dcs.log` for bug reports: a status line every 10 s, a line per run of frames shown without the vapor in DCS's picture and per short gap in the vapor, the first three runs captured |
+| `MACH_READOUT` | false | The Mach readout, on screen and in `dcs.log` (see Settings) |
 | `UPDATE_CHECK` | true | Ask GitHub for a newer version as DCS starts (see Updates) |
 
 Each jet's cone is placed and sized from its own shape (in `Mods\tech\SonicBoom3D\jets.lua`, which the page shares), taken from DCS's aircraft files (`CoreMods\aircraft`) and measured in DCS:

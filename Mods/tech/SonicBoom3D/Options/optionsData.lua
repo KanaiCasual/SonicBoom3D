@@ -33,6 +33,7 @@ cdata = {
 	SB_INSTABILITY     = _("Instability (%)"),
 	SB_INSTABILITY_HELP = _("As in footage near Mach 1: parts of the formed cone drop out for a moment, now and then all of it. 0% holds steady."),
 	SB_ADVANCED_LOGGING = _("Advanced logging"),
-	SB_ADVANCED_LOGGING_HELP = _("For bug reports: more in Saved Games\\DCS\\Logs\\dcs.log, and a capture of the first few frames the cone misses."),
+	SB_ADVANCED_LOGGING_HELP = _("For bug reports: more in Saved Games\\DCS\\Logs\\dcs.log, and a capture of the first few frames the cone misses. Mach readout: each jet's Mach as the cone goes by it, on screen and in dcs.log."),
+	SB_MACH_READOUT    = _("Mach readout"),
 	SB_NOTE            = _("Changes apply straight away, in flight too. An aircraft's cone settings apply to every jet of its type, yours and AI; Reset goes back to its Default. Unticking Vapor cone on this aircraft takes the cone off that type only."),
 }

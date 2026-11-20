@@ -43,6 +43,7 @@ local CFG = {
 	TEST_MODE = false,     -- page: show the cone at any speed and height, to check it lines up
 	ADVANCED_LOGGING = false, -- page: more in dcs.log for bug reports: a status line every 10 s, a line for each run of
 	                       -- frames DCS showed without the vapor in its view, and the first three of those captured (capture-N.txt in the DLL's folder)
+	MACH_READOUT = false,  -- page: on screen, each jet's Mach as the cone goes by it (yours also as DCS has it), and every 10 s in dcs.log
 	UPDATE_CHECK = true,   -- as DCS starts, ask GitHub whether there's a newer SonicBoom3D, and if so say so in the main menu
 }
 
@@ -54,7 +55,7 @@ local OPTIONS = {
 	{ "instability", "INSTABILITY", function(v) return v / 100 end },
 	{ "jetShade", "JET_SHADE" }, { "shadow", "SHADOW" }, { "reflection", "REFLECTION" },
 	{ "cockpit", "SHOW_IN_COCKPIT" }, { "mirrors", "SHOW_IN_MIRRORS" }, { "otherJets", "OTHER_JETS" },
-	{ "testMode", "TEST_MODE" }, { "advancedLogging", "ADVANCED_LOGGING" },
+	{ "testMode", "TEST_MODE" }, { "advancedLogging", "ADVANCED_LOGGING" }, { "machReadout", "MACH_READOUT" },
 }
 -- And the cone's settings per aircraft (the page's "Cone per aircraft", its "jets"; see jets.lua): as read, and
 -- each jet's worked out from them, kept until they change.
@@ -347,16 +348,74 @@ local function otherJet(id, j, o, t)
 	local load = (j.a[1] * ux + j.a[2] * uy + j.a[3] * uz) / 9.81 + uy   -- along its up, gravity included
 	local size, front, shock0, shock1, outer, halfSpan, te, le = placement(geometryOf(o.Name or ""), false)
 	local set = settingsFor(o.Name or "")
-	return { strength(mach, load), h[1], h[2], h[3], h[4], h[5], h[6], h[7] + id % 97 * 7.3,   -- each breathing on its own, timed from its pose
+	-- what was worked out, for the Mach readout
+	j.name, j.mach, j.air, j.load, j.alt, j.strength = o.Name, mach, air, load, p.y, strength(mach, load)
+	j.ground, j.wind = math.sqrt(j.v[1] ^ 2 + j.v[2] ^ 2 + j.v[3] ^ 2), math.sqrt((wx or 0) ^ 2 + (wy or 0) ^ 2 + (wz or 0) ^ 2)
+	return { j.strength, h[1], h[2], h[3], h[4], h[5], h[6], h[7] + id % 97 * 7.3,   -- each breathing on its own, timed from its pose
 		size, 1, front + set.front * FT, shock0, shock1, outer, halfSpan, ux, uy, uz, load, thickness(p.y) * set.thickness / 100, id,
 		j.v[1], j.v[2], j.v[3], h[7],   -- its velocity, and when it was where it is, for the DLL to move it on to the picture's time
 		CFG.CONE_WIDTH * set.width / 100, te, le,
 		math.max(CFG.PULSE * set.pulse / 100, 0.001), set.top / 100, set.bottom / 100, set.move * FT }   -- as set for its type
 end
 
+-- The Mach readout (the page's, for bug reports): each jet's Mach as the cone goes by it, four times a second on
+-- screen (Mods\tech\SonicBoom3D\readout.lua) and every 10 s in dcs.log. Yours twice: as DCS has it, which your cone
+-- goes by, and worked out from your flight path the way every other jet's is, so if that way is wrong it shows.
+local READOUT, readoutAt, readoutLogAt, readoutFailed, yourTrack = nil, 0, 0, false, { history = {} }
+local KT = 1.943844   -- knots in a metre a second
+
+local function thousands(x)
+	local s = string.format("%d", math.floor(x + 0.5))
+	return (s:reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^(%-?),", "%1"))
+end
+
+local function readoutRow(label, mach, cone, air, ground, wind, alt, load)
+	local kt = function(v) return v and string.format("%.0f kt", v * KT) or "-" end
+	return string.format("%-16s %5.2f %4.0f%% %8s %8s %7s %10s %5.1f", label:sub(1, 16), mach, cone * 100,
+		kt(air), kt(ground), kt(wind), thousands(alt / FT) .. " ft", load)
+end
+
+local function hideReadout()
+	if READOUT then READOUT.hide() end
+end
+
+-- you: your jet as DCS has it (nil: not in one); c: the camera, the other jets listed nearest it first, 8 at most.
+local function showReadout(t, c, you)
+	if t < readoutAt and readoutAt - t <= 0.25 then return end   -- 4 a second (and at once if the clock went back)
+	readoutAt = t + 0.25
+	local lines = {
+		string.format("SonicBoom3D Mach readout     the air %+.0f \194\176C against DCS's standard day", warmer),
+		string.format("%-16s %5s %5s %8s %8s %7s %10s %5s", "", "Mach", "cone", "airspeed", "ground", "wind", "altitude", "G"),
+	}
+	if you then
+		lines[#lines + 1] = readoutRow("You, DCS", you.mach, you.strength, you.tas, you.ground, nil, you.alt, you.load)
+		if yourTrack.mach then
+			local j = yourTrack
+			lines[#lines + 1] = readoutRow("You, worked out", j.mach, j.strength, j.air, j.ground, j.wind, j.alt, j.load)
+		end
+	end
+	local near = {}
+	for id, j in pairs(others) do
+		local h = j.history[1]
+		if j.mach and h then near[#near + 1] = { j, (h[1] - c.x) ^ 2 + (h[2] - c.y) ^ 2 + (h[3] - c.z) ^ 2, id } end
+	end
+	table.sort(near, function(a, b) return a[2] < b[2] end)
+	for i = 1, math.min(#near, 8) do
+		local j = near[i][1]
+		lines[#lines + 1] = readoutRow(j.name or ("#" .. near[i][3]), j.mach, j.strength, j.air, j.ground, j.wind, j.alt, j.load)
+	end
+	READOUT = READOUT or dofile(lfs.writedir() .. "Mods\\tech\\SonicBoom3D\\readout.lua")
+	READOUT.show(lines)
+	if t >= readoutLogAt or readoutLogAt - t > 10 then
+		readoutLogAt = t + 10
+		for _, line in ipairs(lines) do say("readout: " .. line) end
+	end
+end
+
 local function sendFrame()
 	readOptions()
 	SB.logging(CFG.ADVANCED_LOGGING and 1 or 0)
+	if not (CFG.ENABLED and CFG.MACH_READOUT) then hideReadout() end
 	if not CFG.ENABLED then return SB.frame(0) end
 	local cam = Export.LoGetCameraPosition()
 	if not cam then return SB.frame(0) end
@@ -370,6 +429,7 @@ local function sendFrame()
 	local pulse, top, bottom, move = CFG.PULSE, 1, 1, 0   -- and as set on the page for your jet's type
 	local ux, uy, uz, load, density, lla = 0, 0, 0, 1, CFG.DENSITY, me and me.LatLongAlt
 	local vel, seenAt = { x = 0, y = 0, z = 0 }, 0   -- your jet's velocity, and when it was where it's sent
+	local you   -- for the Mach readout
 	if me then
 		local name = me.Name or ""
 		history = remember(history, me, t)
@@ -389,6 +449,11 @@ local function sendFrame()
 		if tas and mach > 0.3 then   -- the speed of sound here tells how warm the mission is
 			warmer = warmer + ((tas / mach) ^ 2 / 401.874 - standardTemperature(alt) - warmer) * 0.02
 		end
+		if CFG.MACH_READOUT then
+			you = { mach = mach, tas = tas, alt = alt, strength = s, load = yourLoad,
+			        ground = math.sqrt((vel.x or 0) ^ 2 + (vel.y or 0) ^ 2 + (vel.z or 0) ^ 2) }
+			otherJet(0, yourTrack, me, t)   -- and worked out as every other jet's is
+		end
 		local g = geometryOf(name)
 		measureCockpit(name, g, c, cam.y)
 		size, front, shock0, shock1, outer, halfSpan, te, le = placement(g, true)
@@ -406,6 +471,13 @@ local function sendFrame()
 			lla = lla or o.LatLongAlt
 		else
 			others[id] = nil   -- gone
+		end
+	end
+	if CFG.MACH_READOUT then
+		local ok, err = pcall(showReadout, t, c, you)
+		if not ok and not readoutFailed then
+			readoutFailed = true -- one log line, not one per frame
+			say("Mach readout: " .. tostring(err))
 		end
 	end
 	if not me and #jets == 0 then return SB.frame(0) end
@@ -473,6 +545,7 @@ end
 function cb.onSimulationStop()
 	if SB then SB.frame(0) end
 	if UPDATE then UPDATE.inMission = false end
+	pcall(hideReadout)
 end
 
 package.cpath = package.cpath .. ";" .. DIR .. "?.dll"
