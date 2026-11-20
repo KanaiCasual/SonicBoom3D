@@ -30,6 +30,7 @@ local CFG = {
 	REFLECTION = true,     -- page: its reflection in water, as DCS reflects jets
 	PULSE = 1,             -- how much it flashes forming and breaking up, and breathes when solid: 0 = steady, 1 = like real footage (each jet's Flashing on the page scales it)
 	SOFTNESS = 0,          -- page: from the crisp cone (0) to the softer, a smooth mist with soft edges as the JF-17 draws its own (1); between, a blend
+	INSTABILITY = 0,       -- page: how unstable the formed vapor is, as in footage: parts of the cone drop out for a moment, now and then all of it (0 = never, 1 = most)
 	SHOW_IN_COCKPIT = true, -- page
 	COCKPIT_RADIUS_FT = 26, -- camera this close to your jet (ft) counts as the cockpit view
 	SHOW_IN_MIRRORS = true, -- page
@@ -50,6 +51,7 @@ local CFG = {
 local OPTIONS = {
 	{ "enabled", "ENABLED" }, { "quality", "QUALITY" },
 	{ "softness", "SOFTNESS", function(v) return v / 100 end },
+	{ "instability", "INSTABILITY", function(v) return v / 100 end },
 	{ "jetShade", "JET_SHADE" }, { "shadow", "SHADOW" }, { "reflection", "REFLECTION" },
 	{ "cockpit", "SHOW_IN_COCKPIT" }, { "mirrors", "SHOW_IN_MIRRORS" }, { "otherJets", "OTHER_JETS" },
 	{ "testMode", "TEST_MODE" }, { "advancedLogging", "ADVANCED_LOGGING" },
@@ -419,7 +421,8 @@ local function sendFrame()
 		vel.x or 0, vel.y or 0, vel.z or 0, seenAt,   -- for the DLL to move your jet on to the picture's time
 		te, le, CFG.SOFTNESS,
 		t,    -- the newest simulation step seen: the step the picture shows is one of these
-		top, bottom, move }
+		top, bottom, move,
+		CFG.INSTABILITY }   -- for every jet, as the air is the same
 	for _, jet in ipairs(jets) do
 		for _, x in ipairs(jet) do v[#v + 1] = x end
 	end

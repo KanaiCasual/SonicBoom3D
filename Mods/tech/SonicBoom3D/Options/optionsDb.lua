@@ -15,6 +15,7 @@ return {
 		DbOption.Item(_("Ultra")):Value(4),
 	}),
 	softness   = DbOption.new():setValue(0):slider(DbOption.Range(0, 100)),     -- percent: 0 the crisp cone, 100 the softer
+	instability = DbOption.new():setValue(0):slider(DbOption.Range(0, 100)),    -- percent: 0 the formed cone holds, 100 it comes and goes most
 	jetShade   = DbOption.new():setValue(true):checkbox(),
 	shadow     = DbOption.new():setValue(true):checkbox(),
 	reflection = DbOption.new():setValue(true):checkbox(),
