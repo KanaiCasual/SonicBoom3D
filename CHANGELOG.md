@@ -15,7 +15,11 @@ Not released yet. This list grows until it is.
   Nothing about you is sent. `UPDATE_CHECK = false` at the top of `Scripts\Hooks\SonicBoom3D.lua` turns it off.
 - **The version you have** shows at the top right of Options > Special > SonicBoom3D.
 - **Instability slider** (Options > Special > SonicBoom3D). In real footage near Mach 1 the vapor cone isn't always steady: parts of it vanish and come back, and now and then the whole cone disappears for a moment. Turn Instability up to get that. Missing parts are a quarter to half of the cone and come back within half a second or so; at 100% the whole cone is gone about a sixth of the time. Every jet gets its own timing. It's 0% to start with, so the cone looks as before until you turn it up.
-- **Mach readout** (Options > Special > SonicBoom3D, next to Advanced logging), for bug reports about the cone showing at the wrong speed. A box on screen lists each jet's Mach as the cone sees it, with its airspeed, ground speed, wind, altitude and G; every 10 s the same goes into `dcs.log`. Drag the box anywhere and it stays there. Your own jet is listed twice: once with DCS's own Mach, and once worked out the way other jets' Mach is. If those two disagree, the other jets' numbers are off.
+- **Mach readout** (Options > Special > SonicBoom3D, next to Advanced logging), for bug reports about the cone showing at the wrong speed. A box on screen lists each jet's Mach as the cone sees it, with its airspeed, ground speed, wind, altitude and G; every 10 s the same goes into `dcs.log`. Drag the box anywhere and it stays there. Your own jet is listed twice: once with the Mach your cone goes by (as your HUD shows it), and once worked out the way other jets' Mach is. If those two disagree, the other jets' numbers are off.
+
+### Fixed
+
+- **The cone formed at the wrong Mach on warm and cold missions.** DCS's own Mach number assumes a standard 15 °C day, but your HUD shows Mach for the mission's real air. On a 20 °C mission the cone came in about 0.01 Mach before your HUD said it should, and on a cold day after. It now goes by the same Mach as your HUD, for your jet and for every other jet.
 
 ## 1.2
 

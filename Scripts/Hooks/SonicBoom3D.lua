@@ -143,13 +143,30 @@ local UTC_OFFSET = {
 	Falklands = -3, SinaiMap = 2, Kola = 3, Afghanistan = 4.5, Iraq = 3, GermanyCW = 1,
 }
 local missionClock = nil   -- { year, month, day, start time (s after midnight), UTC offset or nil }
+-- The mission's air against DCS's standard day (K): its weather's temperature at sea level over 15 C. DCS keeps
+-- the whole atmosphere that much warmer or colder (an F-16's sensors had a 20 C mission 5 K warm at every height,
+-- 500 to 40,000 ft), but its own Mach (LoGetMachNumber) is TAS over a standard day's speed of sound all the same;
+-- the jet's HUD, as a real one does, gives it for the air the jet's in (tools/hud_logger.lua). The cone goes by that.
+local warmer = 0
 
-local function readMissionClock()
+local function standardTemperature(alt)
+	return 288.15 - 0.0065 * math.min(alt, 11000)
+end
+
+-- Mach in the mission's air, from DCS's (a standard day's) at this height.
+local function realMach(dcsMach, alt)
+	local T = standardTemperature(alt)
+	return dcsMach * math.sqrt(T / math.max(T + warmer, 150))
+end
+
+local function readMission()
 	local ok, cur = pcall(Sim.getCurrentMission)
 	local m = ok and type(cur) == "table" and cur.mission
 	if m and m.date and m.start_time then
 		missionClock = { m.date.Year, m.date.Month, m.date.Day, m.start_time, UTC_OFFSET[m.theatre or ""] }
 	end
+	local season = m and type(m.weather) == "table" and type(m.weather.season) == "table" and m.weather.season
+	warmer = season and tonumber(season.temperature) and season.temperature - 15 or 0
 end
 
 -- Direction to the sun in DCS's axes (x north, y up, z east): from the mission's date and time, model
@@ -286,13 +303,9 @@ end
 -- Other jets. DCS tells Lua only where they are and which way they point, so, as Tacview does, their
 -- speed and G come from their flight path, smoothed over a few tenths of a second. Their airspeed is
 -- that less the wind where they are, their Mach that over the speed of sound at their height: DCS's
--- standard atmosphere, as much warmer or colder as your own jet's Mach meter shows the mission to be.
-local others, nextScan, warmer = {}, 0, 0   -- jets followed, by id; when to look for jets again; the mission over standard (K)
+-- standard atmosphere, as much warmer or colder as the mission's weather has it.
+local others, nextScan = {}, 0   -- jets followed, by id; when to look for jets again
 local yourLoad = 1   -- your G, smoothed over a few tenths of a second like the other jets'
-
-local function standardTemperature(alt)
-	return 288.15 - 0.0065 * math.min(alt, 11000)
-end
 
 -- Every half second: the nearest jets to the camera, keeping what's known of those already followed.
 local function lookAround(c, t)
@@ -384,18 +397,17 @@ local function showReadout(t, c, you)
 	if t < readoutAt and readoutAt - t <= 0.25 then return end   -- 4 a second (and at once if the clock went back)
 	readoutAt = t + 0.25
 	local lines = {
-		string.format("SonicBoom3D Mach readout     the air %+.0f \194\176C against DCS's standard day", warmer),
+		string.format("SonicBoom3D Mach readout     the mission's air %+.0f \194\176C against a standard day", warmer),
 		string.format("%-16s %5s %5s %8s %8s %7s %10s %5s", "", "Mach", "cone", "airspeed", "ground", "wind", "altitude", "G"),
 	}
 	if you then
-		lines[#lines + 1] = readoutRow("You, DCS", you.mach, you.strength, you.tas, you.ground, nil, you.alt, you.load)
-		-- What your HUD shows, when the dev tool tools\hud_logger.lua runs in DCS's export state and hands it over
+		-- DCS's Mach in the mission's air: what your cone goes by, and your HUD shows
+		lines[#lines + 1] = readoutRow("You", you.mach, you.strength, you.tas, you.ground, nil, you.alt, you.load)
+		-- What your HUD draws, when the dev tool tools\hud_logger.lua runs in DCS's export state and hands it over
 		-- through the DLL (the hook can't read cockpit values itself): "" when it doesn't.
 		local hud = SB.hud and SB.hud() or ""
-		if hud ~= "" then
-			local n = tonumber(hud)
-			lines[#lines + 1] = string.format("%-16s %5s", "You, HUD", n and string.format("%.2f", n) or hud:sub(1, 12))
-		end
+		local n = tonumber(hud:match("%d*%.%d+") or "")
+		if n then lines[#lines + 1] = string.format("%-16s %5.2f", "You, HUD", n) end
 		if yourTrack.mach then
 			local j = yourTrack
 			lines[#lines + 1] = readoutRow("You, worked out", j.mach, j.strength, j.air, j.ground, j.wind, j.alt, j.load)
@@ -448,14 +460,12 @@ local function sendFrame()
 		load = acc and acc.y or 1
 		local dx, dy, dz = h[1] - c.x, h[2] - c.y, h[3] - c.z
 		local dist = math.sqrt(dx * dx + dy * dy + dz * dz)
-		local mach, alt = Export.LoGetMachNumber() or 0, Export.LoGetAltitudeAboveSeaLevel() or 0
+		local alt = Export.LoGetAltitudeAboveSeaLevel() or 0
+		local mach = realMach(Export.LoGetMachNumber() or 0, alt)   -- in the mission's air, as your HUD has it
 		yourLoad = yourLoad + (load - yourLoad) * 0.05
 		s, density = strength(mach, yourLoad), thickness(alt)
 		mainView = dist <= CFG.MAX_DISTANCE_NM * NM and (dist >= CFG.COCKPIT_RADIUS_FT * FT or CFG.SHOW_IN_COCKPIT)
 		local tas = Export.LoGetTrueAirSpeed and Export.LoGetTrueAirSpeed()
-		if tas and mach > 0.3 then   -- the speed of sound here tells how warm the mission is
-			warmer = warmer + ((tas / mach) ^ 2 / 401.874 - standardTemperature(alt) - warmer) * 0.02
-		end
 		if CFG.MACH_READOUT then
 			you = { mach = mach, tas = tas, alt = alt, strength = s, load = yourLoad,
 			        ground = math.sqrt((vel.x or 0) ^ 2 + (vel.y or 0) ^ 2 + (vel.z or 0) ^ 2) }
@@ -515,14 +525,15 @@ local UPDATE
 function cb.onSimulationStart()
 	if UPDATE then UPDATE.inMission = true end
 	readDefaultFov()
-	readMissionClock()
+	readMission()
 	readOptions()
 	local custom = 0
 	for _ in pairs(type(savedJets) == "table" and type(savedJets.use) == "table" and savedJets.use or {}) do custom = custom + 1 end
 	say(string.format("settings %s: %s, quality %d, softness %.2f, shadow %s, reflection %s, advanced logging %s, own presets in use for %d aircraft",
 		hasOptions and "from Options > Special" or "from this file", CFG.ENABLED and "on" or "off", CFG.QUALITY,
 		CFG.SOFTNESS, tostring(CFG.SHADOW), tostring(CFG.REFLECTION), CFG.ADVANCED_LOGGING and "on" or "off", custom))
-	history, seatType, others, nextScan, warmer, yourLoad = {}, nil, {}, 0, 0, 1
+	history, seatType, others, nextScan, yourLoad = {}, nil, {}, 0, 1
+	say(string.format("the mission's air: %+.0f K against a standard day", warmer))
 	nextStatus = Sim.getRealTime() + 5
 end
 
