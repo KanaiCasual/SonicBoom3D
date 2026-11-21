@@ -90,7 +90,7 @@ On its page, **Options > Special > SonicBoom3D**. Changes apply straight away, i
 | Vapor cone | on | The cone at all |
 | Quality | High | How fine its steps through the vapor are. With the cone filling a 4K screen on the development PC: Low 1.35 ms, Medium 1.6, High 1.9, Ultra 2.55 |
 | Hard to soft cone | 0% | From the crisp cone (0%) to a smooth mist with soft edges, as the JF-17 draws its own vapor (100%); in between, a blend of the two, even along the slider (`SOFTNESS`) |
-| Instability | 0% | How unstable the formed cone is, as in footage of jets near Mach 1: parts of it round the jet drop out for a moment (a quarter to half of it), and now and then all of it, coming back within half a second or so. 0% holds it steady once formed; at 100% it's all gone about a sixth of the time. The same for every jet, each with its own timing (`INSTABILITY`) |
+| Instability | 30% | How unstable the formed cone is, as in footage of jets near Mach 1: parts of it round the jet drop out for a moment (a quarter to half of it), and now and then all of it, coming back within half a second or so. 0% holds it steady once formed; at 100% it's all gone about a sixth of the time. The same for every jet, each with its own timing (`INSTABILITY`) |
 | Cone per aircraft | each aircraft's Default | See below |
 | The jet shades its vapor from the sun | on | `JET_SHADE` |
 | Its shadow | on | Its shadow on the ground, the sea and the jet |
@@ -126,7 +126,7 @@ The rest are at the top of `Scripts\Hooks\SonicBoom3D.lua`; restart DCS after ch
 | `JET_SHADE` | true | The jet's wing and fuselage shade its vapor from the sun |
 | `DENSITY` | 2 | How thick the vapor looks: 1 is thinner and more see-through, 4 is twice as thick. Each aircraft's Thickness on the page scales it |
 | `PULSE` | 1 | How much it flashes while forming and breaking up, and breathes once solid: 0 is steady (a plain fade), 1 is like real footage, up to 1.5. Each aircraft's Flashing on the page scales it |
-| `INSTABILITY` | 0 | How unstable the formed vapor is, 0 to 1 (the page's Instability, in percent) |
+| `INSTABILITY` | 0.3 | How unstable the formed vapor is, 0 to 1 (the page's Instability, in percent) |
 | `SHOW_IN_COCKPIT` | true | Draw it in the cockpit view |
 | `COCKPIT_RADIUS_FT` | 26 | Camera within this many feet of your jet counts as cockpit view |
 | `SHOW_IN_MIRRORS` | true | Draw it in the cockpit mirrors |
