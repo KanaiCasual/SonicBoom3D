@@ -389,6 +389,13 @@ local function showReadout(t, c, you)
 	}
 	if you then
 		lines[#lines + 1] = readoutRow("You, DCS", you.mach, you.strength, you.tas, you.ground, nil, you.alt, you.load)
+		-- What your HUD shows, when the dev tool tools\hud_logger.lua runs in DCS's export state and hands it over
+		-- through the DLL (the hook can't read cockpit values itself): "" when it doesn't.
+		local hud = SB.hud and SB.hud() or ""
+		if hud ~= "" then
+			local n = tonumber(hud)
+			lines[#lines + 1] = string.format("%-16s %5s", "You, HUD", n and string.format("%.2f", n) or hud:sub(1, 12))
+		end
 		if yourTrack.mach then
 			local j = yourTrack
 			lines[#lines + 1] = readoutRow("You, worked out", j.mach, j.strength, j.air, j.ground, j.wind, j.alt, j.load)
