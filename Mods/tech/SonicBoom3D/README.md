@@ -235,6 +235,7 @@ It costs nothing when you're not capturing. With **Advanced logging** on it also
   - the mirror pass, and the F-14's square mirror with MSAA (but not a VR eye turned back)
   - VR eyes and quad-view insets, including Lua lagging a frame behind
   - other jets' vapor, with and without yours
+  - no vapor on a moving map (the F-15E's TSD: a view looking straight down while yours doesn't), but in a square view looking steeply down and in yours from straight above
   - DCS's light: its sun brighter, and the same into a multisampled (MSAA) picture, under its cloud shadow the sky's light alone, the jet's own lights in their colour, the sky's light from its ambient cube or environment cube, the cone placed by DCS's camera and clock, and a cone moved on a step too far for a frame counted and logged
   - GPU time at 4K, and that lower quality costs less and higher more
   - the frame capture

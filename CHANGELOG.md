@@ -20,6 +20,7 @@ Not released yet. This list grows until it is.
 ### Fixed
 
 - **The cone formed at the wrong Mach on warm and cold missions.** DCS's own Mach number assumes a standard 15 °C day, but your HUD shows Mach for the mission's real air. On a 20 °C mission the cone came in about 0.01 Mach before your HUD said it should, and on a cold day after. It now goes by the same Mach as your HUD, for your jet and for every other jet.
+- **The cone and its shadow showed on the F-15E's TSD map**, for pilot and WSO. DCS draws that moving map as a view of its own, from a camera at the jet looking straight down, and the vapor went into it like any other view. A view looking straight down while yours doesn't now gets no vapor. Your own view from straight above the jet still shows it.
 
 ## 1.2
 
