@@ -1,18 +1,18 @@
 # SonicBoom3D: Transonic Vapor Cones for DCS World
 
-![SonicBoom3D: an F/A-18C pulling 9 G through Mach 1, the vapor gathered over its wing](images/title-fa18c-pulling-9g.jpg)
+![SonicBoom3D: an F-16C at Mach 1, the top of its vapor cone gone for a moment](images/title-f16c-cone-part-gone.jpg)
 
 Real 3D vapor cones for every supersonic-capable jet in DCS World: yours, the AI's and other players'.
 
 Push into the transonic band and a condensation cone forms around the jet. It's shaped from real photos and drawn as a true volume, not flat sprites.
 
 - Lit by DCS's own sun, sky, moon and afterburner glow, so it fits any time of day and weather
-- Forms from Mach 0.94, solid from 0.97 to 1.01, gone by 1.03 (earlier when you pull or push G)
+- Forms from Mach 0.94 as your HUD shows it, solid from 0.97 to 1.01, gone by 1.03 (earlier when you pull or push G)
 - Casts a shadow, reflects in water, shows from the cockpit and in the mirrors
 - Flat screen and VR, with MSAA, DLAA or DLSS, IC-safe
 - Multiplayer: client-side, nothing on the server
 
-**Latest release: 1.2** ([Releases](../../releases), and [ED User Files](https://files.digitalcombatsimulator.com/en/files/3352000/)). What changed: see the [changelog](CHANGELOG.md).
+**Latest release: 1.3** ([Releases](../../releases), and [ED User Files](https://files.digitalcombatsimulator.com/en/files/3352000/)). What changed: see the [changelog](CHANGELOG.md).
 
 Updates, bug reports and feedback: [Discord](https://discord.gg/hAy2gTF7R2)
 
@@ -22,7 +22,8 @@ Updates, bug reports and feedback: [Discord](https://discord.gg/hAy2gTF7R2)
 - **It looks like condensation:** smooth, with clumps streaming aft and a rim that wavers and frays. It thickens and thins as the jet flies through damper and drier air.
 - **Lit the way DCS lights its own smoke:** the sun, the sky, the afterburner's glow, the moon at night, and grey under an overcast. Looking toward the sun, it glows.
 - **The jet shades its own vapor.** The vapor casts a soft shadow on the ground and the jet, and reflects in the sea, lakes and rivers.
-- **It flashes in as you approach Mach 1**, is solid just below it, breathes gently, and breaks up past it.
+- **It flashes in as you approach Mach 1**, is solid just below it, breathes gently, and breaks up past it. Like in real footage, parts of it drop out for a moment and come back, and now and then the whole cone does.
+- **It forms at the Mach your HUD shows**, corrected for the mission's temperature, on your jet and on every other jet.
 - **G shapes it.** Pulling G gathers the vapor over the wing and pushing gathers it under, and either one brings it in earlier, as in real life.
 - **Your own look for each aircraft:** move it, stretch it, make it wider, taller or flatter, thicker or steadier, and save presets. You can also turn it off for any aircraft.
 - **From crisp to soft:** a slider goes from the crisp cone to a smooth mist with soft edges, like the JF-17's own vapor.
@@ -33,14 +34,20 @@ Updates, bug reports and feedback: [Discord](https://discord.gg/hAy2gTF7R2)
 
 ## Pictures
 
-In-game, unedited, scaled to 1920×1080 (the options page cropped to its window).
+In-game, unedited, scaled to 1920×1080 (the options page cropped to its window, the Mach readout's shot to the screen's top left).
 
 | | |
 |---|---|
+| ![F-15E into the low sun](images/1.3/f15e-into-the-low-sun.jpg) | ![F-15E, half its cone gone for a moment](images/1.3/f15e-half-the-cone-gone.jpg) |
+| F-15E, into the low sun | The same F-15E a moment later: half its cone gone (Instability) |
+| ![F/A-18C past the carrier, its cone half there](images/1.3/fa18c-carrier-cone-half-there.jpg) | ![F-16C side on, its whole cone](images/1.3/f16c-side-on-whole-cone.jpg) |
+| F/A-18C past the carrier at sunset, its cone half there | F-16C side on, its whole cone (the title's jet, a few seconds later) |
+| ![F-16C with the Mach readout](images/1.3/f16c-mach-readout.jpg) | ![The Special options page](images/1.3/options-special-page.jpg) |
+| The Mach readout, top left: the F-16C at Mach 0.98, its cone at 100% | Options > Special > SonicBoom3D |
+| ![F-16C, its cone reshaped](images/1.2/f16c-cone-reshaped.jpg) | ![F/A-18C past the carrier at sunset](images/1.3/fa18c-past-the-carrier-at-sunset.jpg) |
+| F-16C, its cone reshaped: taller, flatter below, longer (1.2) | F/A-18C past the carrier at sunset, its whole cone |
 | ![F-16C pulling 8 G](images/1.2/f16c-pulling-8g.jpg) | ![F-16C pulling 8 G, from behind](images/1.2/f16c-pulling-8g-from-behind.jpg) |
 | F-16C pulling 8 G (AI): the vapor over the wing | F-16C pulling 8 G, from behind |
-| ![F-16C, its cone reshaped](images/1.2/f16c-cone-reshaped.jpg) | ![The Special options page](images/1.2/options-special-page.jpg) |
-| F-16C, its cone reshaped: taller, flatter below, longer | Options > Special > SonicBoom3D |
 | ![F-15E, the softer cone](images/1.2/f15e-softer-cone.jpg) | ![F-15E, half soft](images/1.2/f15e-half-soft.jpg) |
 | F-15E, the softer cone | F-15E, halfway from crisp to soft |
 | ![F-14B mirror](images/1.1/f14b-mirror.jpg) | ![F-14B side on](images/1.1/f14b-side-on.jpg) |
@@ -66,7 +73,7 @@ In-game, unedited, scaled to 1920×1080 (the options page cropped to its window)
 
 The SonicBoom3D icon shows on the main menu's bar, and its settings are under **Options > Special > SonicBoom3D**.
 
-**Updating:** extract the new zip over the old one (or replace it in OvGME) and restart DCS. Your settings are kept, apart from what the [changelog](CHANGELOG.md) says.
+**Updating:** from 1.3 on, the mod checks GitHub as DCS starts and offers newer versions in a window in the main menu: **Update now** installs it for you (restart DCS after). Or extract the new zip over the old one (or replace it in OvGME) and restart DCS. Your settings are kept, apart from what the [changelog](CHANGELOG.md) says.
 
 This repository holds the mod as it stands: its `Mods` and `Scripts` folders drop straight into `Saved Games\DCS`. Between releases they're the version in development.
 
@@ -86,6 +93,7 @@ Other players don't need the mod for you to see it on their jets.
 - **Vapor cone:** on or off.
 - **Quality:** Low to Ultra.
 - **Hard to soft cone:** from the crisp cone (0%) to a smooth mist (100%), or anywhere between.
+- **Instability:** how much the formed cone comes and goes, as in real footage (30% to start with; 0% for a steady cone).
 - **Cone per aircraft:** pick an aircraft (the page opens on the one you're in).
   - **Vapor cone on this aircraft:** untick to turn it off for that type, yours and AI.
   - **Move cone forward** and **Front forward** (±25 ft), **Width**, **Height above**, **Height below**, **Thickness**, and **Flashing and breathing**.
@@ -95,6 +103,9 @@ Other players don't need the mod for you to see it on their jets.
 - **Where it shows:** from the cockpit, in the cockpit mirrors, and on other jets (none, or the nearest 5, 10, 25 or 50).
 - **Test mode:** shows the cone at any speed and height, to check how it lines up.
 - **Advanced logging:** writes more to `dcs.log` for bug reports.
+- **Mach readout:** a box on screen (drag it anywhere) with each jet's Mach as the cone sees it, with its speeds, wind, altitude and G, for bug reports about the cone showing at the wrong speed.
+
+The mod's version shows at the top right of the page.
 
 More settings (Mach range, altitude fade, distances) are at the top of `Scripts\Hooks\SonicBoom3D.lua`, described in the mod's own read-me, `Mods\tech\SonicBoom3D\README.md`.
 
@@ -103,6 +114,7 @@ More settings (Mach range, altitude fade, distances) are at the top of `Scripts\
 - **GPU cost** at High: about 1.9 ms at 4K with the cone filling the screen (Low 1.35 ms, Ultra 2.55 ms). Other jets cost only what their vapor covers on screen.
 - **The JF-17 and Mirage 2000C draw their own vapor** in DCS, so when a player flies one, this mod leaves it alone. AI ones get this cone.
 - **Other jets' vapor is worked out from their flight path**, since DCS doesn't give mods their speed or G. Expect it to start and stop a little later than on your own jet.
+- **The update check** sends nothing about you: it only asks GitHub for the latest release. `UPDATE_CHECK = false` at the top of `Scripts\Hooks\SonicBoom3D.lua` turns it off.
 
 ## Uninstall
 

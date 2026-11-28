@@ -1,12 +1,10 @@
 # Changelog
 
-## 1.3 (in development)
-
-Not released yet. This list grows until it is.
+## 1.3
 
 ### New
 
-- **Update check.** As DCS starts, SonicBoom3D asks GitHub whether there's a newer version. If there is, a window in the main menu says so (`1.3 → 1.4`) with a short chime, never over a mission:
+- **Built-in updater.** From 1.3 on you won't need to install updates by hand. As DCS starts, SonicBoom3D asks GitHub whether there's a newer version. If there is, a window in the main menu says so (`1.3 → 1.4`) with a short chime, never over a mission:
   - **Update now** downloads it and installs it for you. Restart DCS to use it.
   - **Release page** opens its page in your browser, to install it yourself.
   - **Skip** doesn't ask about that version again.
@@ -21,6 +19,7 @@ Not released yet. This list grows until it is.
 
 - **The cone formed at the wrong Mach on warm and cold missions.** DCS's own Mach number assumes a standard 15 °C day, but your HUD shows Mach for the mission's real air. On a 20 °C mission the cone came in about 0.01 Mach before your HUD said it should, and on a cold day after. It now goes by the same Mach as your HUD, for your jet and for every other jet.
 - **The cone and its shadow showed on the F-15E's TSD map**, for pilot and WSO. DCS draws that moving map as a view of its own, from a camera at the jet looking straight down, and the vapor went into it like any other view. A view looking straight down while yours doesn't now gets no vapor. Your own view from straight above the jet still shows it.
+- **The cone could jump far ahead of its jet for one frame** when the camera cut from one jet to another far away, as scripted cameras and some view changes do. That frame now gets no vapor.
 
 ## 1.2
 
